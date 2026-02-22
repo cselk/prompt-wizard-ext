@@ -198,21 +198,8 @@
         <div class="field-group">
             <label>Persona</label>
             <div class="custom-select" data-id="persona">
-                <div class="select-trigger"><span>Expert Developer</span></div>
-                <div class="custom-options">
-                    <div
-                        class="custom-option selected"
-                        data-value="Expert Developer"
-                    >
-                        Expert Developer
-                    </div>
-                    <div class="custom-option" data-value="Marketing Guru">
-                        Marketing Guru
-                    </div>
-                    <div class="custom-option" data-value="Socratic Tutor">
-                        Socratic Tutor
-                    </div>
-                </div>
+                <div class="select-trigger"><span>Trigger</span></div>
+                <div class="custom-options"></div>
             </div>
         </div>
 
@@ -220,18 +207,8 @@
         <div class="field-group">
             <label>Operator</label>
             <div class="custom-select" data-id="operator">
-                <div class="select-trigger"><span>Summarize</span></div>
-                <div class="custom-options">
-                    <div class="custom-option selected" data-value="summarize">
-                        Summarize
-                    </div>
-                    <div class="custom-option" data-value="critizise">
-                        Critizise
-                    </div>
-                    <div class="custom-option" data-value="explain">
-                        Explain
-                    </div>
-                </div>
+                <div class="select-trigger"><span>Trigger</span></div>
+                <div class="custom-options"></div>
             </div>
         </div>
 
@@ -253,60 +230,10 @@
 
         <!-- Format (native select replaced by custom-select) -->
         <div class="field-group">
-            <div class="custom-select-wrapper">
-                <label for="formatInput">Format</label>
-                <div
-                    class="custom-select"
-                    data-name="format"
-                    id="formatSelect"
-                    tabindex="0"
-                    aria-haspopup="listbox"
-                    aria-expanded="false"
-                >
-                    <div
-                        class="select-trigger"
-                        role="button"
-                        aria-labelledby="formatLabel"
-                    >
-                        <span class="label" id="formatLabel"
-                            >Bullet Points</span
-                        >
-                    </div>
-                    <div
-                        class="custom-options"
-                        role="listbox"
-                        aria-labelledby="formatLabel"
-                    >
-                        <div
-                            class="custom-option selected"
-                            data-value="Bulletpoints"
-                            role="option"
-                            aria-selected="true"
-                        >
-                            Bullet Points
-                        </div>
-                        <div
-                            class="custom-option"
-                            data-value="Markdown"
-                            role="option"
-                        >
-                            Markdown
-                        </div>
-                        <div
-                            class="custom-option"
-                            data-value="Table"
-                            role="option"
-                        >
-                            Table
-                        </div>
-                    </div>
-                </div>
-                <input
-                    type="hidden"
-                    id="formatInput"
-                    name="format"
-                    value="Bulletpoints"
-                />
+            <label>Format</label>
+            <div class="custom-select" data-id="format">
+                <div class="select-trigger"><span>Trigger</span></div>
+                <div class="custom-options"></div>
             </div>
         </div>
 
@@ -321,7 +248,6 @@
 
         <button id="generateBtn">Craft Prompt</button>
 
-        <!-- Keep external script for the rest of popup logic -->
         <script src="popup.js"></script>
     </body>
 </html>

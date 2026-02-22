@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Prompt Wizard Settings</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                background: #1a1a1e;
+                color: #f4f4f5;
+                padding: 40px;
+            }
+            .container {
+                max-width: 600px;
+                margin: auto;
+            }
+            .section {
+                background: #252529;
+                padding: 20px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+                border: 1px solid #3f3f46;
+            }
+            h2 {
+                margin-top: 0;
+                color: #6366f1;
+            }
+            .item-list {
+                margin: 15px 0;
+            }
+            .item {
+                display: flex;
+                justify-content: space-between;
+                background: #18181b;
+                padding: 8px 12px;
+                margin-bottom: 5px;
+                border-radius: 6px;
+            }
+            .remove-btn {
+                color: #ef4444;
+                cursor: pointer;
+                font-weight: bold;
+            }
+            input {
+                background: #18181b;
+                border: 1px solid #3f3f46;
+                color: white;
+                padding: 10px;
+                border-radius: 6px;
+                width: 70%;
+            }
+            button.add-btn {
+                background: #6366f1;
+                border: none;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Wizard Preferences</h1>
+
+            <div class="section">
+                <h2>Personas</h2>
+                <div class="item-list" id="persona-list"></div>
+                <div class="input-group">
+                    <input
+                        type="text"
+                        id="new-persona"
+                        placeholder="e.g. Senior Architect"
+                    />
+                    <button class="add-btn" data-category="persona">Add</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Operators</h2>
+                <div class="item-list" id="operator-list"></div>
+                <div class="input-group">
+                    <input
+                        type="text"
+                        id="new-operator"
+                        placeholder="e.g. Debug Code"
+                    />
+                    <button class="add-btn" data-category="operator">
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Formats</h2>
+                <div class="item-list" id="format-list"></div>
+                <div class="input-group">
+                    <input
+                        type="text"
+                        id="new-format"
+                        placeholder="e.g. JSON"
+                    />
+                    <button class="add-btn" data-category="format">Add</button>
+                </div>
+            </div>
+        </div>
+        <script src="options.js"></script>
+    </body>
+</html>
