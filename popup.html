@@ -1,0 +1,327 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <style>
+            :root {
+                --bg-color: #1a1a1e;
+                --card-bg: #252529;
+                --text-main: #f4f4f5;
+                --text-muted: #a1a1aa;
+                --accent: #6366f1; /* Modern Indigo */
+                --accent-hover: #4f46e5;
+                --border: #3f3f46;
+                --input-bg: #18181b;
+            }
+
+            body {
+                width: 320px;
+                padding: 20px;
+                margin: 0;
+                font-family:
+                    "Inter",
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    Roboto,
+                    sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-main);
+            }
+
+            h3 {
+                margin: 0 0 20px 0;
+                font-size: 18px;
+                font-weight: 600;
+                letter-spacing: -0.5px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            /* The Wizard Icon (Simple CSS circle) */
+            h3::before {
+                content: "";
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                background: var(--accent);
+                border-radius: 50%;
+                box-shadow: 0 0 10px var(--accent);
+            }
+
+            .field-group {
+                margin-bottom: 14px;
+            }
+
+            label {
+                display: block;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--text-muted);
+                margin-bottom: 6px;
+                font-weight: 700;
+            }
+
+            /* Generic input styles — used by the select trigger, textareas and inputs */
+            textarea,
+            input[type="text"],
+            .select-trigger {
+                width: 100%;
+                box-sizing: border-box;
+                background-color: var(--input-bg);
+                border: 1px solid var(--border);
+                color: var(--text-main);
+                padding: 10px 12px;
+                border-radius: 8px;
+                font-size: 13px;
+                transition: all 0.2s ease;
+                outline: none;
+                font-family: inherit;
+            }
+
+            textarea:focus,
+            input[type="text"]:focus,
+            .select-trigger:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            }
+
+            textarea {
+                resize: vertical;
+                min-height: 50px;
+            }
+
+            button {
+                width: 100%;
+                margin-top: 10px;
+                padding: 12px;
+                border-radius: 8px;
+                border: none;
+                background-color: var(--accent);
+                color: white;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition:
+                    transform 0.1s ease,
+                    background-color 0.2s ease;
+            }
+
+            button:hover {
+                background-color: var(--accent-hover);
+            }
+
+            button:active {
+                transform: scale(0.98);
+            }
+
+            /* Custom select controls */
+            .custom-select-wrapper {
+                position: relative;
+            }
+
+            .custom-select {
+                position: relative;
+                user-select: none;
+            }
+
+            .select-trigger {
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .select-trigger .label {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .select-trigger:after {
+                content: "\25BC";
+                font-size: 8px;
+                color: var(--text-muted);
+                margin-left: 8px;
+            }
+
+            .custom-options {
+                position: absolute;
+                display: none;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: #27272a;
+                border-radius: 8px;
+                margin-top: 4px;
+                z-index: 999;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            .custom-select.open .custom-options {
+                display: block;
+            }
+
+            .custom-option {
+                padding: 10px 12px;
+                font-size: 13px;
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+
+            .custom-option:hover {
+                background: var(--accent);
+                color: white;
+            }
+
+            .custom-option.selected {
+                color: var(--accent);
+                font-weight: 600;
+            }
+
+            /* Small helper to show when there's a placeholder */
+            .select-placeholder {
+                color: var(--text-muted);
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <h3>Prompt Wizard</h3>
+
+        <!-- Persona (already a custom-select) -->
+        <div class="field-group">
+            <label>Persona</label>
+            <div class="custom-select" data-id="persona">
+                <div class="select-trigger"><span>Expert Developer</span></div>
+                <div class="custom-options">
+                    <div
+                        class="custom-option selected"
+                        data-value="Expert Developer"
+                    >
+                        Expert Developer
+                    </div>
+                    <div class="custom-option" data-value="Marketing Guru">
+                        Marketing Guru
+                    </div>
+                    <div class="custom-option" data-value="Socratic Tutor">
+                        Socratic Tutor
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operator (native select replaced by custom-select) -->
+        <div class="field-group">
+            <label>Operator</label>
+            <div class="custom-select" data-id="operator">
+                <div class="select-trigger"><span>Summarize</span></div>
+                <div class="custom-options">
+                    <div class="custom-option selected" data-value="summarize">
+                        Summarize
+                    </div>
+                    <div class="custom-option" data-value="critizise">
+                        Critizise
+                    </div>
+                    <div class="custom-option" data-value="explain">
+                        Explain
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <label for="input">Input</label>
+            <textarea
+                id="input"
+                placeholder="What do you want to do?"
+            ></textarea>
+        </div>
+
+        <div class="field-group">
+            <label for="context">Context</label>
+            <textarea
+                id="context"
+                placeholder="Any additional background?"
+            ></textarea>
+        </div>
+
+        <!-- Format (native select replaced by custom-select) -->
+        <div class="field-group">
+            <div class="custom-select-wrapper">
+                <label for="formatInput">Format</label>
+                <div
+                    class="custom-select"
+                    data-name="format"
+                    id="formatSelect"
+                    tabindex="0"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                >
+                    <div
+                        class="select-trigger"
+                        role="button"
+                        aria-labelledby="formatLabel"
+                    >
+                        <span class="label" id="formatLabel"
+                            >Bullet Points</span
+                        >
+                    </div>
+                    <div
+                        class="custom-options"
+                        role="listbox"
+                        aria-labelledby="formatLabel"
+                    >
+                        <div
+                            class="custom-option selected"
+                            data-value="Bulletpoints"
+                            role="option"
+                            aria-selected="true"
+                        >
+                            Bullet Points
+                        </div>
+                        <div
+                            class="custom-option"
+                            data-value="Markdown"
+                            role="option"
+                        >
+                            Markdown
+                        </div>
+                        <div
+                            class="custom-option"
+                            data-value="Table"
+                            role="option"
+                        >
+                            Table
+                        </div>
+                    </div>
+                </div>
+                <input
+                    type="hidden"
+                    id="formatInput"
+                    name="format"
+                    value="Bulletpoints"
+                />
+            </div>
+        </div>
+
+        <div class="field-group">
+            <label for="constraint">Constraint</label>
+            <input
+                type="text"
+                id="constraint"
+                placeholder="e.g. Under 100 words"
+            />
+        </div>
+
+        <button id="generateBtn">Craft Prompt</button>
+
+        <!-- Keep external script for the rest of popup logic -->
+        <script src="popup.js"></script>
+    </body>
+</html>
