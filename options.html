@@ -46,15 +46,34 @@
                 color: white;
                 padding: 10px;
                 border-radius: 6px;
-                width: 70%;
+                width: 85%;
             }
+
+            textarea {
+                background: #18181b;
+                border: 1px solid #3f3f46;
+                color: white;
+                padding: 10px;
+                border-radius: 6px;
+                width: 100%;
+                box-sizing: border-box;
+                min-height: 200px;
+                font-family: monospace;
+                resize: vertical;
+
+                scrollbar-width: none;
+            }
+            textarea::-webkit-scrollbar {
+                display:none
+            }
+
             button.add-btn {
                 background: #6366f1;
                 border: none;
                 color: white;
                 padding: 10px 15px;
                 border-radius: 6px;
-                cursor: pointer;
+                cursor: pointer;);
             }
         </style>
     </head>
@@ -101,6 +120,26 @@
                     />
                     <button class="add-btn" data-category="format">Add</button>
                 </div>
+            </div>
+
+            <div class="section">
+                <h2>Master Prompt Template</h2>
+                <p style="font-size: 12px; color: #a1a1aa; margin-bottom: 10px">
+                    Use these placeholders: <b>{{persona}}</b>,
+                    <b>{{operator}}</b>, <b>{{input}}</b>, <b>{{context}}</b>,
+                    <b>{{constraint}}</b>, <b>{{format}}</b>
+                </p>
+                <textarea
+                    id="master-template"
+                    style="height: 200px; font-family: monospace"
+                ></textarea>
+                <button
+                    id="save-template-btn"
+                    class="add-btn"
+                    style="margin-top: 10px"
+                >
+                    Save Template
+                </button>
             </div>
         </div>
         <script src="options.js"></script>

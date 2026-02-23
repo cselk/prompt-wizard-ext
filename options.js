@@ -6,8 +6,33 @@ const defaults = {
   format: ["Bulletpoints", "Markdown", "Table"],
 };
 
+const defaultTemplate = `
+# SYSTEM INSTRUCTIONS
+Act as an expert {{persona}}. Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
+
+# TASK OBJECTIVE
+Your primary mission is to: {{operator}}.
+Please process the following input: "{{input}}"
+
+# PROVIDED CONTEXT
+{{context}}
+
+# OPERATIONAL CONSTRAINTS & RULES
+- STRICTURE: {{constraint}}
+- Maintain the authoritative voice of a {{persona}}.
+- Do not provide meta-commentary (e.g., do not say "Here is the summary").
+- Focus exclusively on the output based on the provided input.
+
+# OUTPUT SPECIFICATION
+- FORMAT: {{format}}
+- Ensure the structural integrity of the {{format}} request is maintained.
+
+# EXECUTION
+Begin the response now.
+`.trim();
+
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Load data
+  // Load data
   chrome.storage.sync.get(categories, (data) => {
     categories.forEach((cat) => {
       const list = data[cat] || defaults[cat];
@@ -15,11 +40,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 2. Handle "Add" clicks via Event Listener (No more CSP error)
+  // Load template
+  chrome.storage.sync.get(["template"], (data) => {
+    document.getElementById("master-template").value =
+      data.template || defaultTemplate;
+  });
+
+  // Handle "Add" clicks via Event Listener (No more CSP error)
   document.querySelectorAll(".add-btn").forEach((button) => {
     button.addEventListener("click", () => {
       const category = button.getAttribute("data-category");
       addItem(category);
+    });
+  });
+
+  // Save Template Logic
+  document.getElementById("save-template-btn").addEventListener("click", () => {
+    const newTemplate = document.getElementById("master-template").value;
+    chrome.storage.sync.set({ template: newTemplate }, () => {
+      alert("Template saved successfully!");
     });
   });
 });
@@ -34,7 +73,7 @@ function renderList(category, items) {
     div.className = "item";
     div.innerHTML = `
             <span>${item}</span>
-            <span class="remove-btn" data-index="${index}" data-category="${category}">×</span>
+            <span class="remove-btn" data-index="${index}" data-category="${category}">&#x00D7</span>
         `;
     container.appendChild(div);
   });

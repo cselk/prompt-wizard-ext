@@ -1,5 +1,30 @@
 const promptData = {};
 
+const defaultTemplate = `
+# SYSTEM INSTRUCTIONS
+Act as an expert {{persona}}. Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
+
+# TASK OBJECTIVE
+Your primary mission is to: {{operator}}.
+Please process the following input: "{{input}}"
+
+# PROVIDED CONTEXT
+{{context}}
+
+# OPERATIONAL CONSTRAINTS & RULES
+- STRICTURE: {{constraint}}
+- Maintain the authoritative voice of a {{persona}}.
+- Do not provide meta-commentary (e.g., do not say "Here is the summary").
+- Focus exclusively on the output based on the provided input.
+
+# OUTPUT SPECIFICATION
+- FORMAT: {{format}}
+- Ensure the structural integrity of the {{format}} request is maintained.
+
+# EXECUTION
+Begin the response now.
+`.trim();
+
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Explicitly list the categories as they appear in storage
   const categories = ["persona", "operator", "format"];
@@ -96,32 +121,68 @@ document.addEventListener("click", () => {
     .forEach((s) => s.classList.remove("open"));
 });
 
-// Updated "Craft" Button Logic
-document.getElementById("generateBtn").addEventListener("click", async () => {
-  // Sync the standard text fields into our object
-  promptData.input = document.getElementById("input").value;
-  promptData.context = document.getElementById("context").value;
-  promptData.constraint = document.getElementById("constraint").value;
+document.getElementById("generateBtn").addEventListener("click", () => {
+  // 1. Collect current input values
+  const currentInput = {
+    persona: promptData.persona || "Expert",
+    operator: promptData.operator || "Assist",
+    format: promptData.format || "Plain Text",
+    input: document.getElementById("input").value || "",
+    context:
+      document.getElementById("context").value || "No additional context.",
+    constraint: document.getElementById("constraint").value || "None.",
+  };
 
-  const finalPrompt = `Act as a ${promptData.persona}.
-Task: ${promptData.operator} the following: "${promptData.input}".
-Context: ${promptData.context}.
-Constraint: ${promptData.constraint}.
-Output Format: ${promptData.format}.`;
+  // 3. Fetch from storage
+  chrome.storage.sync.get(["template"], (data) => {
+    // Use the saved template or the default string
+    let templateText = data.template || defaultTemplate;
 
-  // Send to AI page
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (text) => {
-      const inputField =
-        document.querySelector("#prompt-textarea") ||
-        document.querySelector('[contenteditable="true"]');
-      if (inputField) {
-        inputField.focus();
-        document.execCommand("insertText", false, text);
-      }
-    },
-    args: [finalPrompt],
+    // 4. Safely Replace Placeholders
+    const keys = [
+      "persona",
+      "operator",
+      "input",
+      "context",
+      "constraint",
+      "format",
+    ];
+
+    keys.forEach((key) => {
+      const regex = new RegExp(`{{${key}}}`, "g");
+      // Ensure the value exists and is a string before calling .replace
+      const replacementValue = String(currentInput[key] || "");
+      templateText = templateText.replace(regex, replacementValue);
+    });
+
+    // 5. Send to Tab (The variable is now definitely defined in this scope)
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]) return;
+
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        func: (textToInject) => {
+          const selectors = [
+            "#prompt-textarea",
+            ".ProseMirror",
+            '[contenteditable="true"]',
+            "textarea",
+          ];
+          let inputField = null;
+          for (const s of selectors) {
+            inputField = document.querySelector(s);
+            if (inputField) break;
+          }
+
+          if (inputField) {
+            inputField.focus();
+            document.execCommand("insertText", false, textToInject);
+          } else {
+            alert("Could not find an AI input field on this page.");
+          }
+        },
+        args: [templateText], // Pass the finished text here
+      });
+    });
   });
 });
