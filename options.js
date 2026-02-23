@@ -6,30 +6,35 @@ const defaults = {
   format: ["Bulletpoints", "Markdown", "Table"],
 };
 
-const defaultTemplate = `
-# SYSTEM INSTRUCTIONS
-Act as an expert {{persona}}. Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
+const defaultTemplates = [
+  {
+    name: "Standard",
+    content: `
+    # SYSTEM INSTRUCTIONS
+    Act as an expert {{persona}}. Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
 
-# TASK OBJECTIVE
-Your primary mission is to: {{operator}}.
-Please process the following input: "{{input}}"
+    # TASK OBJECTIVE
+    Your primary mission is to: {{operator}}.
+    Please process the following input: "{{input}}"
 
-# PROVIDED CONTEXT
-{{context}}
+    # PROVIDED CONTEXT
+    {{context}}
 
-# OPERATIONAL CONSTRAINTS & RULES
-- STRICTURE: {{constraint}}
-- Maintain the authoritative voice of a {{persona}}.
-- Do not provide meta-commentary (e.g., do not say "Here is the summary").
-- Focus exclusively on the output based on the provided input.
+    # OPERATIONAL CONSTRAINTS & RULES
+    - STRICTURE: {{constraint}}
+    - Maintain the authoritative voice of a {{persona}}.
+    - Do not provide meta-commentary (e.g., do not say "Here is the summary").
+    - Focus exclusively on the output based on the provided input.
 
-# OUTPUT SPECIFICATION
-- FORMAT: {{format}}
-- Ensure the structural integrity of the {{format}} request is maintained.
+    # OUTPUT SPECIFICATION
+    - FORMAT: {{format}}
+    - Ensure the structural integrity of the {{format}} request is maintained.
 
-# EXECUTION
-Begin the response now.
-`.trim();
+    # EXECUTION
+    Begin the response now.
+    `.trim(),
+  },
+];
 
 document.addEventListener("DOMContentLoaded", () => {
   // Load data
@@ -40,10 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Load template
-  chrome.storage.sync.get(["template"], (data) => {
-    document.getElementById("master-template").value =
-      data.template || defaultTemplate;
+  // Load templates
+  chrome.storage.sync.get(["templates"], (data) => {
+    const list = data.templates || defaultTemplates;
+    renderTemplateList(list);
   });
 
   // Handle "Add" clicks via Event Listener (No more CSP error)
@@ -54,11 +59,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Save Template Logic
+  // Save Template
   document.getElementById("save-template-btn").addEventListener("click", () => {
-    const newTemplate = document.getElementById("master-template").value;
-    chrome.storage.sync.set({ template: newTemplate }, () => {
-      alert("Template saved successfully!");
+    const name = document.getElementById("template-name").value.trim();
+    const content = document.getElementById("template-content").value.trim();
+
+    if (!name || !content)
+      return alert("Please provide both a name and content.");
+
+    chrome.storage.sync.get(["templates"], (data) => {
+      const list = data.templates || defaultTemplates;
+      list.push({ name, content });
+      chrome.storage.sync.set({ templates: list }, () => {
+        renderTemplateList(list);
+        document.getElementById("template-name").value = "";
+        document.getElementById("template-content").value = "";
+      });
     });
   });
 });
@@ -110,5 +126,30 @@ function removeItem(category, index) {
     chrome.storage.sync.set({ [category]: list }, () => {
       renderList(category, list);
     });
+  });
+}
+
+function renderTemplateList(items) {
+  const container = document.getElementById("template-list");
+  container.innerHTML = "";
+  items.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+            <span><b>${item.name}</b></span>
+            <span class="remove-btn" data-index="${index}">&#x00D7</span>
+        `;
+    div.querySelector(".remove-btn").onclick = () => removeTemplate(index);
+    container.appendChild(div);
+  });
+}
+
+function removeTemplate(index) {
+  chrome.storage.sync.get(["templates"], (data) => {
+    const list = data.templates;
+    list.splice(index, 1);
+    chrome.storage.sync.set({ templates: list }, () =>
+      renderTemplateList(list),
+    );
   });
 }

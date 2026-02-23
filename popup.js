@@ -1,70 +1,105 @@
 const promptData = {};
 
-const defaultTemplate = `
-# SYSTEM INSTRUCTIONS
-Act as an expert {{persona}}. Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
+const defaultTemplates = [
+  {
+    name: "Standard",
+    content: `
+    # SYSTEM INSTRUCTIONS
+    Act as an expert {{persona}}. Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
 
-# TASK OBJECTIVE
-Your primary mission is to: {{operator}}.
-Please process the following input: "{{input}}"
+    # TASK OBJECTIVE
+    Your primary mission is to: {{operator}}.
+    Please process the following input: "{{input}}"
 
-# PROVIDED CONTEXT
-{{context}}
+    # PROVIDED CONTEXT
+    {{context}}
 
-# OPERATIONAL CONSTRAINTS & RULES
-- STRICTURE: {{constraint}}
-- Maintain the authoritative voice of a {{persona}}.
-- Do not provide meta-commentary (e.g., do not say "Here is the summary").
-- Focus exclusively on the output based on the provided input.
+    # OPERATIONAL CONSTRAINTS & RULES
+    - STRICTURE: {{constraint}}
+    - Maintain the authoritative voice of a {{persona}}.
+    - Do not provide meta-commentary (e.g., do not say "Here is the summary").
+    - Focus exclusively on the output based on the provided input.
 
-# OUTPUT SPECIFICATION
-- FORMAT: {{format}}
-- Ensure the structural integrity of the {{format}} request is maintained.
+    # OUTPUT SPECIFICATION
+    - FORMAT: {{format}}
+    - Ensure the structural integrity of the {{format}} request is maintained.
 
-# EXECUTION
-Begin the response now.
-`.trim();
+    # EXECUTION
+    Begin the response now.
+    `.trim(),
+  },
+];
+
+let allTemplates = [];
+let selectedTemplateContent = "";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Explicitly list the categories as they appear in storage
   const categories = ["persona", "operator", "format"];
 
-  chrome.storage.sync.get(categories, (data) => {
-    categories.forEach((cat) => {
-      // Get the list from storage or use a temporary fallback if empty
-      const list = data[cat] || [];
+  chrome.storage.sync.get(
+    ["persona", "operator", "format", "templates"],
+    (data) => {
+      // 1. Handle regular categories
+      categories.forEach((cat) => {
+        // Get the list from storage or use a temporary fallback if empty
+        const list = data[cat] || [];
 
-      // Find the container based on data-id
-      const container = document.querySelector(
-        `[data-id="${cat}"] .custom-options`,
-      );
-      const triggerSpan = document.querySelector(
-        `[data-id="${cat}"] .select-trigger span`,
-      );
+        // Find the container based on data-id
+        const container = document.querySelector(
+          `[data-id="${cat}"] .custom-options`,
+        );
+        const triggerSpan = document.querySelector(
+          `[data-id="${cat}"] .select-trigger span`,
+        );
 
-      if (container && list.length > 0) {
-        // Clear existing and inject new options
-        container.innerHTML = list
-          .map(
-            (item, i) => `
+        if (container && list.length > 0) {
+          // Clear existing and inject new options
+          container.innerHTML = list
+            .map(
+              (item, i) => `
                     <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${item}">
                         ${item}
                     </div>
                 `,
-          )
-          .join("");
+            )
+            .join("");
 
-        // Update the trigger text to the first item in the list
-        triggerSpan.textContent = list[0];
-        promptData[cat] = list[0];
-      } else {
-        console.warn(`No data or container found for category: ${cat}`);
-      }
-    });
+          // Update the trigger text to the first item in the list
+          triggerSpan.textContent = list[0];
+          promptData[cat] = list[0];
+        } else {
+          console.warn(`No data or container found for category: ${cat}`);
+        }
+      });
 
-    // 3. Initialize the click listeners AFTER the elements are injected
-    initCustomSelects();
-  });
+      // 2. Handle Templates specially
+      const templateList = data.templates || defaultTemplates;
+      allTemplates = templateList;
+
+      const container = document.querySelector(
+        `[data-id="templates"] .custom-options`,
+      );
+      const triggerSpan = document.querySelector(
+        `[data-id="templates"] .select-trigger span`,
+      );
+
+      container.innerHTML = templateList
+        .map(
+          (t, i) => `
+                  <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${t.name}">
+                      ${t.name}
+                  </div>
+              `,
+        )
+        .join("");
+
+      triggerSpan.textContent = templateList[0].name;
+      selectedTemplateContent = templateList[0].content;
+
+      // 3. Initialize the click listeners AFTER the elements are injected
+      initCustomSelects();
+    },
+  );
 });
 
 function initCustomSelects() {
@@ -99,6 +134,11 @@ function initCustomSelects() {
         .closest(".custom-select")
         .querySelector(".select-trigger span");
 
+      if (cat === "templates") {
+        const found = allTemplates.find((t) => t.name === val);
+        selectedTemplateContent = found ? found.content : "";
+      }
+
       // Update UI
       triggerSpan.textContent = val;
       menu
@@ -122,7 +162,7 @@ document.addEventListener("click", () => {
 });
 
 document.getElementById("generateBtn").addEventListener("click", () => {
-  // 1. Collect current input values
+  // 1. Collect current input values from the UI
   const currentInput = {
     persona: promptData.persona || "Expert",
     operator: promptData.operator || "Assist",
@@ -133,56 +173,58 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     constraint: document.getElementById("constraint").value || "None.",
   };
 
-  // 3. Fetch from storage
-  chrome.storage.sync.get(["template"], (data) => {
-    // Use the saved template or the default string
-    let templateText = data.template || defaultTemplate;
+  // 2. Use the globally stored content of the template currently selected in the dropdown
+  // We use the variable 'selectedTemplateContent' which was set in our DOMContentLoaded/Dropdown logic
+  let templateText = selectedTemplateContent;
 
-    // 4. Safely Replace Placeholders
-    const keys = [
-      "persona",
-      "operator",
-      "input",
-      "context",
-      "constraint",
-      "format",
-    ];
+  if (!templateText) {
+    alert("Please select a template first.");
+    return;
+  }
 
-    keys.forEach((key) => {
-      const regex = new RegExp(`{{${key}}}`, "g");
-      // Ensure the value exists and is a string before calling .replace
-      const replacementValue = String(currentInput[key] || "");
-      templateText = templateText.replace(regex, replacementValue);
-    });
+  // 3. Safely Replace Placeholders using the global regex
+  const keys = [
+    "persona",
+    "operator",
+    "input",
+    "context",
+    "constraint",
+    "format",
+  ];
 
-    // 5. Send to Tab (The variable is now definitely defined in this scope)
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (!tabs[0]) return;
+  keys.forEach((key) => {
+    const regex = new RegExp(`{{${key}}}`, "g");
+    const replacementValue = String(currentInput[key] || "");
+    templateText = templateText.replace(regex, replacementValue);
+  });
 
-      chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: (textToInject) => {
-          const selectors = [
-            "#prompt-textarea",
-            ".ProseMirror",
-            '[contenteditable="true"]',
-            "textarea",
-          ];
-          let inputField = null;
-          for (const s of selectors) {
-            inputField = document.querySelector(s);
-            if (inputField) break;
-          }
+  // 4. Send to Tab
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs[0]) return;
 
-          if (inputField) {
-            inputField.focus();
-            document.execCommand("insertText", false, textToInject);
-          } else {
-            alert("Could not find an AI input field on this page.");
-          }
-        },
-        args: [templateText], // Pass the finished text here
-      });
+    chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: (textToInject) => {
+        const selectors = [
+          "#prompt-textarea",
+          ".ProseMirror",
+          '[contenteditable="true"]',
+          "textarea",
+        ];
+        let inputField = null;
+        for (const s of selectors) {
+          inputField = document.querySelector(s);
+          if (inputField) break;
+        }
+
+        if (inputField) {
+          inputField.focus();
+          document.execCommand("insertText", false, textToInject);
+        } else {
+          alert("Could not find an AI input field on this page.");
+        }
+      },
+      args: [templateText],
     });
   });
 });

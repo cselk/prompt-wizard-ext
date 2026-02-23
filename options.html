@@ -123,23 +123,35 @@
             </div>
 
             <div class="section">
-                <h2>Master Prompt Template</h2>
-                <p style="font-size: 12px; color: #a1a1aa; margin-bottom: 10px">
-                    Use these placeholders: <b>{{persona}}</b>,
-                    <b>{{operator}}</b>, <b>{{input}}</b>, <b>{{context}}</b>,
-                    <b>{{constraint}}</b>, <b>{{format}}</b>
-                </p>
-                <textarea
-                    id="master-template"
-                    style="height: 200px; font-family: monospace"
-                ></textarea>
-                <button
-                    id="save-template-btn"
-                    class="add-btn"
-                    style="margin-top: 10px"
-                >
-                    Save Template
-                </button>
+                <h2>Template Gallery</h2>
+                <div id="template-list" class="item-list"></div>
+
+                <div class="input-group" style="margin-top: 20px">
+                    <label>Template Name</label>
+                    <input
+                        type="text"
+                        id="template-name"
+                        placeholder="e.g., Code Reviewer"
+                    />
+
+                    <br />
+                    <br />
+
+                    <label style="margin-top: 10px">Prompt Structure</label>
+                    <textarea
+                        id="template-content"
+                        style="height: 150px; font-family: monospace"
+                        placeholder="Use {{persona}}, {{input}}, etc."
+                    ></textarea>
+
+                    <button
+                        id="save-template-btn"
+                        class="add-btn"
+                        style="margin-top: 10px"
+                    >
+                        Add to Gallery
+                    </button>
+                </div>
             </div>
         </div>
         <script src="options.js"></script>
