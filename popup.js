@@ -95,3 +95,33 @@ document.addEventListener("click", () => {
     .querySelectorAll(".custom-select")
     .forEach((s) => s.classList.remove("open"));
 });
+
+// Updated "Craft" Button Logic
+document.getElementById("generateBtn").addEventListener("click", async () => {
+  // Sync the standard text fields into our object
+  promptData.input = document.getElementById("input").value;
+  promptData.context = document.getElementById("context").value;
+  promptData.constraint = document.getElementById("constraint").value;
+
+  const finalPrompt = `Act as a ${promptData.persona}.
+Task: ${promptData.operator} the following: "${promptData.input}".
+Context: ${promptData.context}.
+Constraint: ${promptData.constraint}.
+Output Format: ${promptData.format}.`;
+
+  // Send to AI page
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: (text) => {
+      const inputField =
+        document.querySelector("#prompt-textarea") ||
+        document.querySelector('[contenteditable="true"]');
+      if (inputField) {
+        inputField.focus();
+        document.execCommand("insertText", false, text);
+      }
+    },
+    args: [finalPrompt],
+  });
+});
