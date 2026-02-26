@@ -1,5 +1,3 @@
-console.log("🪄 Wizard Bubble Active");
-
 const mockSnippets = [
   {
     name: "Fix Grammar",
@@ -19,7 +17,7 @@ function initWizardBubble() {
   // Prevent duplicate injection
   if (document.querySelector(".wizard-floating-bubble")) return;
 
-  // 1. Create the Bubble
+  // Create Bubble
   const bubble = document.createElement("div");
   bubble.className = "wizard-floating-bubble";
   bubble.title = "Open Snippets";
@@ -36,7 +34,7 @@ function initWizardBubble() {
 
   bubble.style.top = voiceBtn.getBoundingClientRect().top + 8 + "px";
 
-  // 2. Create the Menu
+  // Create Menu
   const menu = document.createElement("div");
   menu.id = "snippet-window";
 
@@ -57,11 +55,11 @@ function initWizardBubble() {
   menu.style.left =
     voiceBtn.getBoundingClientRect().left + voiceBtn.clientWidth + 25 + "px";
 
-  // 3. Add to Body
+  // Add bubble and menu to Body
   document.body.appendChild(bubble);
   document.body.appendChild(menu);
 
-  // 4. Interaction
+  // Click event on bubble
   bubble.onclick = (e) => {
     e.stopPropagation();
     const isVisible = menu.style.display === "flex";
@@ -77,7 +75,7 @@ function initWizardBubble() {
 }
 
 function insertText(text) {
-  // Find the chatbox (same logic as before)
+  // Find the chatbox
   const selectors = [
     "#prompt-textarea",
     ".ProseMirror",
@@ -91,6 +89,7 @@ function insertText(text) {
     if (inputField) break;
   }
 
+  // Insert prompt if chatbox found
   if (inputField) {
     inputField.focus();
     document.execCommand("insertText", false, text);
@@ -99,12 +98,12 @@ function insertText(text) {
   }
 }
 
-// Since the body always exists, we can run this almost immediately
+// run init when body loaded
 if (document.readyState === "complete") {
   initWizardBubble();
 } else {
   window.addEventListener("load", initWizardBubble);
 }
 
-// Safety check: if the AI site does a full page transition without a reload
+// Safety check for if the site performs a page transition without reload
 setInterval(initWizardBubble, 3000);

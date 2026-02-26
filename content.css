@@ -3,7 +3,7 @@
     position: fixed;
     width: 20px;
     height: 20px;
-    background: #6366f1; /* Vibrant Purple */
+    background: #6366f1; /* same accent color */
     color: white;
     border-radius: 50%;
     display: flex;
@@ -19,11 +19,11 @@
 }
 
 .wizard-floating-bubble:hover {
-    background: #4f46e5;
+    background: #4f46e5; /* same accent hover color */
     transform: scale(1.1);
 }
 
-/* The Snippet Menu (Floating above the bubble) */
+/* The Snippet Menu (Floating below the bubble) */
 #snippet-window {
     position: fixed;
     width: 240px;
@@ -43,10 +43,6 @@
     cursor: pointer;
     border-radius: 8px;
     font-size: 14px;
-}
-
-.snippet-item:last-child {
-    border-bottom: none;
 }
 
 .snippet-item:hover {
