@@ -1,0 +1,60 @@
+/* The Main Floating Bubble */
+.wizard-floating-bubble {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    background: #6366f1; /* Vibrant Purple */
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    z-index: 999999; /* Stay above everything */
+    transition:
+        transform 0.2s,
+        background 0.3s;
+}
+
+.wizard-floating-bubble:hover {
+    background: #4f46e5;
+    transform: scale(1.1);
+}
+
+/* The Snippet Menu (Floating above the bubble) */
+#snippet-window {
+    position: fixed;
+    bottom: 85px; /* Above the bubble */
+    right: 25px;
+    width: 240px;
+    background: #1e1e22;
+    border: 1px solid #3f3f46;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    display: none; /* Controlled by JS */
+    flex-direction: column;
+    padding: 8px;
+    z-index: 999999;
+}
+
+.snippet-item {
+    padding: 12px;
+    color: #e4e4e7;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 14px;
+    border-bottom: 1px solid #2d2d30;
+}
+
+.snippet-item:last-child {
+    border-bottom: none;
+}
+
+.snippet-item:hover {
+    background: #2d2d30;
+    color: #a78bfa; /* Light purple text on hover */
+}
