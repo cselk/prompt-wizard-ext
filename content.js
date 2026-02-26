@@ -2,15 +2,15 @@ console.log("🪄 Wizard Bubble Active");
 
 const mockSnippets = [
   {
-    name: "✨ Fix Grammar",
+    name: "Fix Grammar",
     text: "Please correct the grammar and flow of this: ",
   },
   {
-    name: "💻 Review Code",
+    name: "Review Code",
     text: "Analyze this code for bugs and efficiency: ",
   },
   {
-    name: "📝 Summarize",
+    name: "Summarize",
     text: "Summarize the following into 3 key bullet points: ",
   },
 ];
@@ -23,6 +23,18 @@ function initWizardBubble() {
   const bubble = document.createElement("div");
   bubble.className = "wizard-floating-bubble";
   bubble.title = "Open Snippets";
+
+  // Reposition Bubble next to chatbox
+  let voiceBtn = document.querySelector('[aria-label="Start Voice"]');
+
+  if (!voiceBtn) {
+    voiceBtn = document.querySelector('[aria-label="Send Prompt"]');
+  }
+
+  bubble.style.left =
+    voiceBtn.getBoundingClientRect().left + voiceBtn.clientWidth + 25 + "px";
+
+  bubble.style.top = voiceBtn.getBoundingClientRect().top + 8 + "px";
 
   // 2. Create the Menu
   const menu = document.createElement("div");
@@ -39,6 +51,11 @@ function initWizardBubble() {
     };
     menu.appendChild(item);
   });
+
+  // Reposition Menu
+  menu.style.top = voiceBtn.getBoundingClientRect().top + 40 + "px";
+  menu.style.left =
+    voiceBtn.getBoundingClientRect().left + voiceBtn.clientWidth + 25 + "px";
 
   // 3. Add to Body
   document.body.appendChild(bubble);

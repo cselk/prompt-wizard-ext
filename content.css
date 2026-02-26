@@ -1,8 +1,6 @@
 /* The Main Floating Bubble */
 .wizard-floating-bubble {
     position: fixed;
-    bottom: 10px;
-    right: 10px;
     width: 20px;
     height: 20px;
     background: #6366f1; /* Vibrant Purple */
@@ -28,8 +26,6 @@
 /* The Snippet Menu (Floating above the bubble) */
 #snippet-window {
     position: fixed;
-    bottom: 85px; /* Above the bubble */
-    right: 25px;
     width: 240px;
     background: #1e1e22;
     border: 1px solid #3f3f46;
@@ -47,7 +43,6 @@
     cursor: pointer;
     border-radius: 8px;
     font-size: 14px;
-    border-bottom: 1px solid #2d2d30;
 }
 
 .snippet-item:last-child {
