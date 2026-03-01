@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Prompt Wizard",
-  "version": "1.3.7",
+  "version": "1.3.8",
   "description": "Easily tweak AI prompts with presets and aspects.",
   "permissions": ["activeTab", "scripting", "storage"],
   "options_page": "options.html",
