@@ -36,6 +36,21 @@ const defaultTemplates = [
   },
 ];
 
+const defaultSnippets = [
+  {
+    name: "Fix Grammar",
+    content: "Please correct the grammar and flow of this: ",
+  },
+  {
+    name: "Review Code",
+    content: "Analyze this code for bugs and efficiency: ",
+  },
+  {
+    name: "Summarize",
+    content: "Summarize the following into 3 key bullet points: ",
+  },
+];
+
 document.addEventListener("DOMContentLoaded", () => {
   // Load data
   chrome.storage.sync.get(categories, (data) => {
@@ -51,8 +66,14 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTemplateList(list);
   });
 
+  // Load snippets
+  chrome.storage.sync.get(["snippets"], (data) => {
+    const list = data.snippets || defaultSnippets;
+    renderSnippetList(list);
+  });
+
   // Handle "Add" clicks via Event Listener (No more CSP error)
-  document.querySelectorAll(".add-btn").forEach((button) => {
+  document.querySelectorAll(".add-btn[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
       const category = button.getAttribute("data-category");
       addItem(category);
@@ -75,6 +96,25 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("template-name").value = "";
         document.getElementById("template-content").value = "";
       });
+    });
+  });
+});
+
+// Save Snippet
+document.getElementById("save-snippet-btn").addEventListener("click", () => {
+  const name = document.getElementById("snippet-name").value.trim();
+  const content = document.getElementById("snippet-content").value.trim();
+
+  if (!name || !content)
+    return alert("Please provide both a name and content.");
+
+  chrome.storage.sync.get(["snippets"], (data) => {
+    const list = data.snippets || defaultSnippets;
+    list.push({ name, content });
+    chrome.storage.sync.set({ snippets: list }, () => {
+      renderSnippetList(list);
+      document.getElementById("snippet-name").value = "";
+      document.getElementById("snippet-content").value = "";
     });
   });
 });
@@ -151,5 +191,33 @@ function removeTemplate(index) {
     chrome.storage.sync.set({ templates: list }, () =>
       renderTemplateList(list),
     );
+  });
+}
+
+function renderSnippetList(items) {
+  const container = document.getElementById("snippet-list");
+  container.innerHTML = "";
+  items.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "item";
+    const nameSpan = document.createElement("span");
+    const nameBold = document.createElement("b");
+    nameBold.textContent = item.name;
+    nameSpan.appendChild(nameBold);
+    const removeBtn = document.createElement("span");
+    removeBtn.className = "remove-btn";
+    removeBtn.textContent = "\u00D7";
+    removeBtn.onclick = () => removeSnippet(index);
+    div.appendChild(nameSpan);
+    div.appendChild(removeBtn);
+    container.appendChild(div);
+  });
+}
+
+function removeSnippet(index) {
+  chrome.storage.sync.get(["snippets"], (data) => {
+    const list = data.snippets;
+    list.splice(index, 1);
+    chrome.storage.sync.set({ snippets: list }, () => renderSnippetList(list));
   });
 }

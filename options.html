@@ -153,6 +153,38 @@
                     </button>
                 </div>
             </div>
+
+            <div class="section">
+                <h2>Snippet Manager</h2>
+                <div id="snippet-list" class="item-list"></div>
+
+                <div class="input-group" style="margin-top: 20px">
+                    <label>Snippet Name</label>
+                    <input
+                        type="text"
+                        id="snippet-name"
+                        placeholder="e.g., 3-bullet Summary"
+                    />
+
+                    <br />
+                    <br />
+
+                    <label style="margin-top: 10px">Snippet</label>
+                    <textarea
+                        id="snippet-content"
+                        style="height: 150px; font-family: monospace"
+                        placeholder="Summarize the following in only 3 bullet points and ..."
+                    ></textarea>
+
+                    <button
+                        id="save-snippet-btn"
+                        class="add-btn"
+                        style="margin-top: 10px"
+                    >
+                        Create Snippet
+                    </button>
+                </div>
+            </div>
         </div>
         <script src="options.js"></script>
     </body>
