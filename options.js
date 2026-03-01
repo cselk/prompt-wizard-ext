@@ -52,27 +52,19 @@ const defaultSnippets = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Load data
-  chrome.storage.sync.get(categories, (data) => {
+  chrome.storage.sync.get([...categories, "templates", "snippets"], (data) => {
     categories.forEach((cat) => {
       const list = data[cat] || defaults[cat];
       renderList(cat, list);
     });
+
+    const templateList = data.templates || defaultTemplates;
+    renderTemplateList(templateList);
+
+    const snippetList = data.snippets || defaultSnippets;
+    renderSnippetList(snippetList);
   });
 
-  // Load templates
-  chrome.storage.sync.get(["templates"], (data) => {
-    const list = data.templates || defaultTemplates;
-    renderTemplateList(list);
-  });
-
-  // Load snippets
-  chrome.storage.sync.get(["snippets"], (data) => {
-    const list = data.snippets || defaultSnippets;
-    renderSnippetList(list);
-  });
-
-  // Handle "Add" clicks via Event Listener (No more CSP error)
   document.querySelectorAll(".add-btn[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
       const category = button.getAttribute("data-category");
@@ -80,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Save Template
   document.getElementById("save-template-btn").addEventListener("click", () => {
     const name = document.getElementById("template-name").value.trim();
     const content = document.getElementById("template-content").value.trim();
@@ -134,7 +125,6 @@ function renderList(category, items) {
     container.appendChild(div);
   });
 
-  // Handle "Remove" clicks via Event Listener
   container.querySelectorAll(".remove-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const cat = e.target.getAttribute("data-category");
@@ -200,16 +190,11 @@ function renderSnippetList(items) {
   items.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "item";
-    const nameSpan = document.createElement("span");
-    const nameBold = document.createElement("b");
-    nameBold.textContent = item.name;
-    nameSpan.appendChild(nameBold);
-    const removeBtn = document.createElement("span");
-    removeBtn.className = "remove-btn";
-    removeBtn.textContent = "\u00D7";
-    removeBtn.onclick = () => removeSnippet(index);
-    div.appendChild(nameSpan);
-    div.appendChild(removeBtn);
+    div.innerHTML = `
+            <span><b>${item.name}</b></span>
+            <span class="remove-btn" data-index="${index}">&#x00D7</span>
+        `;
+    div.querySelector(".remove-btn").onclick = () => removeSnippet(index);
     container.appendChild(div);
   });
 }

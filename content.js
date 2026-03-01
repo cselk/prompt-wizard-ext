@@ -13,12 +13,11 @@ const defaultSnippets = [
   },
 ];
 
-// Reusable function to calculate and apply positions
 function repositionWizard() {
   const bubble = document.querySelector(".wizard-floating-bubble");
   const menu = document.getElementById("snippet-window");
 
-  // Try to find a reference anchor (Voice button or Send button)
+  // Anchor to Voice or Send button
   let anchor =
     document.querySelector('[aria-label="Start Voice"]') ||
     document.querySelector('[aria-label="Send Prompt"]') ||
@@ -29,18 +28,16 @@ function repositionWizard() {
     const offsetX = 25;
     const offsetY = 8;
 
-    // Move Bubble
     bubble.style.position = "fixed";
     bubble.style.left = `${rect.left + anchor.clientWidth + offsetX}px`;
     bubble.style.top = `${rect.top + offsetY}px`;
-    bubble.style.display = "flex"; // Ensure it's visible if anchor is found
+    bubble.style.display = "flex";
 
-    // Move Menu (Keep it synced below the bubble)
     menu.style.position = "fixed";
     menu.style.left = bubble.style.left;
     menu.style.top = `${rect.top + 45}px`;
   } else if (bubble) {
-    // Hide bubble if the chatbox/anchor is gone (e.g., navigating to settings)
+    // Hide bubble if the chatbox is gone (e.g., navigating to settings)
     bubble.style.display = "none";
   }
 }
@@ -54,11 +51,11 @@ function initWizardBubble() {
 
   const menu = document.createElement("div");
   menu.id = "snippet-window";
-  menu.style.display = "none"; // Ensure it starts hidden
+  menu.style.display = "none";
 
   chrome.storage.sync.get(["snippets"], (data) => {
     const snippets = data.snippets || defaultSnippets;
-    menu.innerHTML = ""; // Clear mock items
+    menu.innerHTML = "";
     snippets.forEach((s) => {
       const item = document.createElement("div");
       item.className = "snippet-item";
@@ -87,7 +84,6 @@ function initWizardBubble() {
     }
   });
 
-  // Run first positioning immediately
   repositionWizard();
 }
 
@@ -109,16 +105,14 @@ function insertText(text) {
   }
 }
 
-// 1. Initialize the elements
 if (document.readyState === "complete") {
   initWizardBubble();
 } else {
   window.addEventListener("load", initWizardBubble);
 }
 
-// 2. The Interval for Positioning (Smoothness check)
-// 100ms makes the movement look fluid if the user resizes the window or chatbox grows
+// Poll to keep the bubble positioned (handles resizes and DOM changes)
 setInterval(repositionWizard, 10);
 
-// 3. The Interval for Injection (Ensures it survives React re-renders)
+// Re-inject on React re-renders
 setInterval(initWizardBubble, 2000);
