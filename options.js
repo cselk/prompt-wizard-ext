@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Handle "Add" clicks via Event Listener (No more CSP error)
-  document.querySelectorAll(".add-btn").forEach((button) => {
+  document.querySelectorAll(".add-btn[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
       const category = button.getAttribute("data-category");
       addItem(category);
