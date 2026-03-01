@@ -1,15 +1,15 @@
-const mockSnippets = [
+const defaultSnippets = [
   {
     name: "Fix Grammar",
-    text: "Please correct the grammar and flow of this: ",
+    content: "Please correct the grammar and flow of this: ",
   },
   {
     name: "Review Code",
-    text: "Analyze this code for bugs and efficiency: ",
+    content: "Analyze this code for bugs and efficiency: ",
   },
   {
     name: "Summarize",
-    text: "Summarize the following into 3 key bullet points: ",
+    content: "Summarize the following into 3 key bullet points: ",
   },
 ];
 
@@ -38,16 +38,21 @@ function initWizardBubble() {
   const menu = document.createElement("div");
   menu.id = "snippet-window";
 
-  mockSnippets.forEach((s) => {
-    const item = document.createElement("div");
-    item.className = "snippet-item";
-    item.innerText = s.name;
-    item.onclick = (e) => {
-      e.stopPropagation();
-      insertText(s.text);
-      menu.style.display = "none";
-    };
-    menu.appendChild(item);
+  // Load Snippets
+  chrome.storage.sync.get(["snippets"], (data) => {
+    const snippets = data.snippets || defaultSnippets;
+
+    snippets.forEach((s) => {
+      const item = document.createElement("div");
+      item.className = "snippet-item";
+      item.innerText = s.name;
+      item.onclick = (e) => {
+        e.stopPropagation();
+        insertText(s.content);
+        menu.style.display = "none";
+      };
+      menu.appendChild(item);
+    });
   });
 
   // Reposition Menu
