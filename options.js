@@ -206,7 +206,6 @@ function renderSnippetList(items) {
     nameSpan.appendChild(nameBold);
     const removeBtn = document.createElement("span");
     removeBtn.className = "remove-btn";
-    removeBtn.setAttribute("data-index", index);
     removeBtn.textContent = "\u00D7";
     removeBtn.onclick = () => removeSnippet(index);
     div.appendChild(nameSpan);
