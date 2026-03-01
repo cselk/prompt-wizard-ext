@@ -165,11 +165,20 @@ function renderTemplateList(items) {
   items.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "item";
-    div.innerHTML = `
-            <span><b>${item.name}</b></span>
-            <span class="remove-btn" data-index="${index}">&#x00D7</span>
-        `;
-    div.querySelector(".remove-btn").onclick = () => removeTemplate(index);
+
+    const nameSpan = document.createElement("span");
+    const nameBold = document.createElement("b");
+
+    nameBold.textContent = item.name;
+    nameSpan.appendChild(nameBold);
+
+    const removeBtn = document.createElement("span");
+    removeBtn.className = "remove-btn";
+    removeBtn.textContent = "\u00D7";
+    removeBtn.onclick = () => removeSnippet(index);
+
+    div.appendChild(nameSpan);
+    div.appendChild(removeBtn);
     container.appendChild(div);
   });
 }
@@ -190,11 +199,20 @@ function renderSnippetList(items) {
   items.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "item";
-    div.innerHTML = `
-            <span><b>${item.name}</b></span>
-            <span class="remove-btn" data-index="${index}">&#x00D7</span>
-        `;
-    div.querySelector(".remove-btn").onclick = () => removeSnippet(index);
+
+    const nameSpan = document.createElement("span");
+    const nameBold = document.createElement("b");
+
+    nameBold.textContent = item.name;
+    nameSpan.appendChild(nameBold);
+
+    const removeBtn = document.createElement("span");
+    removeBtn.className = "remove-btn";
+    removeBtn.textContent = "\u00D7";
+    removeBtn.onclick = () => removeSnippet(index);
+
+    div.appendChild(nameSpan);
+    div.appendChild(removeBtn);
     container.appendChild(div);
   });
 }
