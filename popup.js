@@ -39,12 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.sync.get(
     ["persona", "operator", "format", "templates"],
     (data) => {
-      // 1. Handle regular categories
       categories.forEach((cat) => {
-        // Get the list from storage or use a temporary fallback if empty
         const list = data[cat] || [];
-
-        // Find the container based on data-id
         const container = document.querySelector(
           `[data-id="${cat}"] .custom-options`,
         );
@@ -53,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         if (container && list.length > 0) {
-          // Clear existing and inject new options
           container.innerHTML = list
             .map(
               (item, i) => `
@@ -64,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
             )
             .join("");
 
-          // Update the trigger text to the first item in the list
           triggerSpan.textContent = list[0];
           promptData[cat] = list[0];
         } else {
@@ -72,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // 2. Handle Templates specially
       const templateList = data.templates || defaultTemplates;
       allTemplates = templateList;
 
@@ -96,20 +89,18 @@ document.addEventListener("DOMContentLoaded", () => {
       triggerSpan.textContent = templateList[0].name;
       selectedTemplateContent = templateList[0].content;
 
-      // 3. Initialize the click listeners AFTER the elements are injected
+      // Initialize click listeners after elements are injected
       initCustomSelects();
     },
   );
 });
 
 function initCustomSelects() {
-  // Dropdown Toggles
+  // Replace triggers to remove any existing listeners before re-attaching
   document.querySelectorAll(".select-trigger").forEach((trigger) => {
-    // Remove existing listeners to prevent double-firing
     trigger.replaceWith(trigger.cloneNode(true));
   });
 
-  // Re-select triggers after clone
   document.querySelectorAll(".select-trigger").forEach((trigger) => {
     trigger.addEventListener("click", (e) => {
       const parent = trigger.parentElement;
@@ -139,14 +130,12 @@ function initCustomSelects() {
         selectedTemplateContent = found ? found.content : "";
       }
 
-      // Update UI
       triggerSpan.textContent = val;
       menu
         .querySelectorAll(".custom-option")
         .forEach((opt) => opt.classList.remove("selected"));
       option.classList.add("selected");
 
-      // Update Data
       promptData[cat] = val;
 
       option.closest(".custom-select").classList.remove("open");
@@ -162,7 +151,6 @@ document.addEventListener("click", () => {
 });
 
 document.getElementById("generateBtn").addEventListener("click", () => {
-  // 1. Collect current input values from the UI
   const currentInput = {
     persona: promptData.persona || "Expert",
     operator: promptData.operator || "Assist",
@@ -173,8 +161,6 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     constraint: document.getElementById("constraint").value || "None.",
   };
 
-  // 2. Use the globally stored content of the template currently selected in the dropdown
-  // We use the variable 'selectedTemplateContent' which was set in our DOMContentLoaded/Dropdown logic
   let templateText = selectedTemplateContent;
 
   if (!templateText) {
@@ -182,23 +168,13 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     return;
   }
 
-  // 3. Safely Replace Placeholders using the global regex
-  const keys = [
-    "persona",
-    "operator",
-    "input",
-    "context",
-    "constraint",
-    "format",
-  ];
+  const keys = ["persona", "operator", "input", "context", "constraint", "format"];
 
   keys.forEach((key) => {
     const regex = new RegExp(`{{${key}}}`, "g");
-    const replacementValue = String(currentInput[key] || "");
-    templateText = templateText.replace(regex, replacementValue);
+    templateText = templateText.replace(regex, String(currentInput[key] || ""));
   });
 
-  // 4. Send to Tab
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs[0]) return;
 

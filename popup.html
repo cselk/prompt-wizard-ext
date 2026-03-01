@@ -40,7 +40,7 @@
                 gap: 8px;
             }
 
-            /* The Wizard Icon (Simple CSS circle) */
+            /* Wizard indicator */
             h3::before {
                 content: "";
                 display: inline-block;
@@ -65,7 +65,7 @@
                 font-weight: 700;
             }
 
-            /* Generic input styles — used by the select trigger, textareas and inputs */
+            /* Shared input styles */
             textarea,
             input[type="text"],
             .select-trigger {
@@ -118,7 +118,7 @@
                 transform: scale(0.98);
             }
 
-            /* Custom select controls */
+            /* Custom select */
             .custom-select-wrapper {
                 position: relative;
             }
@@ -184,7 +184,7 @@
                 font-weight: 600;
             }
 
-            /* Small helper to show when there's a placeholder */
+            /* Placeholder color */
             .select-placeholder {
                 color: var(--text-muted);
                 font-style: italic;
@@ -209,7 +209,6 @@
             "
         />
 
-        <!-- Persona (already a custom-select) -->
         <div class="field-group">
             <label>Persona</label>
             <div class="custom-select" data-id="persona">
@@ -218,7 +217,6 @@
             </div>
         </div>
 
-        <!-- Operator (native select replaced by custom-select) -->
         <div class="field-group">
             <label>Operator</label>
             <div class="custom-select" data-id="operator">
@@ -243,7 +241,6 @@
             ></textarea>
         </div>
 
-        <!-- Format (native select replaced by custom-select) -->
         <div class="field-group">
             <label>Format</label>
             <div class="custom-select" data-id="format">
