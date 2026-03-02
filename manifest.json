@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Prompt Wizard",
-  "version": "1.3.9",
-  "description": "Easily tweak AI prompts with presets and aspects.",
+  "name": "Cito",
+  "version": "1.4.0",
+  "description": "Professional prompt manager with custom templates, persona presets, and a floating snippet menu for ChatGPT, Claude, and Gemini.",
   "permissions": ["activeTab", "scripting", "storage"],
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_icon": "cito_icon.png"
   },
   "content_scripts": [
     {
@@ -20,5 +20,9 @@
       "css": ["content.css"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "icons": {
+    "48": "cito_icon.png",
+    "128": "cito_icon.png"
+  }
 }
