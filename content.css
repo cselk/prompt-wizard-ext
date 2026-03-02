@@ -1,5 +1,5 @@
 /* The Main Floating Bubble */
-.wizard-floating-bubble {
+.cito-floating-bubble {
     position: fixed;
     width: 20px;
     height: 20px;
@@ -18,7 +18,7 @@
         background 0.3s;
 }
 
-.wizard-floating-bubble:hover {
+.cito-floating-bubble:hover {
     background: #97cbfb; /* same accent hover color */
     transform: scale(1.1);
 }

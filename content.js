@@ -13,8 +13,8 @@ const defaultSnippets = [
   },
 ];
 
-function repositionWizard() {
-  const bubble = document.querySelector(".wizard-floating-bubble");
+function repositionCito() {
+  const bubble = document.querySelector(".cito-floating-bubble");
   const menu = document.getElementById("snippet-window");
 
   // Anchor to Voice or Send button
@@ -42,11 +42,11 @@ function repositionWizard() {
   }
 }
 
-function initWizardBubble() {
-  if (document.querySelector(".wizard-floating-bubble")) return;
+function initCitoBubble() {
+  if (document.querySelector(".cito-floating-bubble")) return;
 
   const bubble = document.createElement("div");
-  bubble.className = "wizard-floating-bubble";
+  bubble.className = "cito-floating-bubble";
   bubble.title = "Open Snippets";
 
   const menu = document.createElement("div");
@@ -84,7 +84,7 @@ function initWizardBubble() {
     }
   });
 
-  repositionWizard();
+  repositionCito();
 }
 
 function insertText(text) {
@@ -106,13 +106,13 @@ function insertText(text) {
 }
 
 if (document.readyState === "complete") {
-  initWizardBubble();
+  initCitoBubble();
 } else {
-  window.addEventListener("load", initWizardBubble);
+  window.addEventListener("load", initCitoBubble);
 }
 
 // Poll to keep the bubble positioned (handles resizes and DOM changes)
-setInterval(repositionWizard, 10);
+setInterval(repositionCito, 10);
 
 // Re-inject on React re-renders
-setInterval(initWizardBubble, 2000);
+setInterval(initCitoBubble, 2000);
