@@ -7,7 +7,7 @@
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "cito_icon.png"
+    "default_icon": "assets/cito_icon.png"
   },
   "content_scripts": [
     {
@@ -16,13 +16,13 @@
         "https://claude.ai/*",
         "https://gemini.google.com/*"
       ],
-      "js": ["content.js"],
-      "css": ["content.css"],
+      "js": ["scripts/content.js"],
+      "css": ["css/content.css"],
       "run_at": "document_idle"
     }
   ],
   "icons": {
-    "48": "cito_icon.png",
-    "128": "cito_icon.png"
+    "48": "assets/cito_icon.png",
+    "128": "assets/cito_icon.png"
   }
 }
