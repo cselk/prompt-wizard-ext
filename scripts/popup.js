@@ -168,7 +168,14 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     return;
   }
 
-  const keys = ["persona", "operator", "input", "context", "constraint", "format"];
+  const keys = [
+    "persona",
+    "operator",
+    "input",
+    "context",
+    "constraint",
+    "format",
+  ];
 
   keys.forEach((key) => {
     const regex = new RegExp(`{{${key}}}`, "g");
