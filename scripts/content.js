@@ -1,18 +1,3 @@
-const defaultSnippets = [
-  {
-    name: "Fix Grammar",
-    content: "Please correct the grammar and flow of this: ",
-  },
-  {
-    name: "Review Code",
-    content: "Analyze this code for bugs and efficiency: ",
-  },
-  {
-    name: "Summarize",
-    content: "Summarize the following into 3 key bullet points: ",
-  },
-];
-
 function repositionCito() {
   const bubble = document.querySelector(".cito-floating-bubble");
   const menu = document.getElementById("snippet-window");
@@ -54,7 +39,7 @@ function initCitoBubble() {
   menu.style.display = "none";
 
   chrome.storage.sync.get(["snippets"], (data) => {
-    const snippets = data.snippets || defaultSnippets;
+    const snippets = data.snippets;
     menu.innerHTML = "";
     snippets.forEach((s) => {
       const item = document.createElement("div");
