@@ -1,35 +1,5 @@
 const promptData = {};
 
-const defaultTemplates = [
-  {
-    name: "Standard",
-    content: `
-    # SYSTEM INSTRUCTIONS
-    Act as an expert {{persona}}. Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
-
-    # TASK OBJECTIVE
-    Your primary mission is to: {{operator}}.
-    Please process the following input: "{{input}}"
-
-    # PROVIDED CONTEXT
-    {{context}}
-
-    # OPERATIONAL CONSTRAINTS & RULES
-    - STRICTURE: {{constraint}}
-    - Maintain the authoritative voice of a {{persona}}.
-    - Do not provide meta-commentary (e.g., do not say "Here is the summary").
-    - Focus exclusively on the output based on the provided input.
-
-    # OUTPUT SPECIFICATION
-    - FORMAT: {{format}}
-    - Ensure the structural integrity of the {{format}} request is maintained.
-
-    # EXECUTION
-    Begin the response now.
-    `.trim(),
-  },
-];
-
 let allTemplates = [];
 let selectedTemplateContent = "";
 
@@ -66,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      const templateList = data.templates || defaultTemplates;
+      const templateList = data.templates;
       allTemplates = templateList;
 
       const container = document.querySelector(
