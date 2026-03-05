@@ -167,13 +167,18 @@ button:active {
 }
 
 .custom-option:hover {
-    background: var(--accent);
+    background: var(--accent-hover);
     color: white;
 }
 
 .custom-option.selected {
     color: var(--accent);
     font-weight: 600;
+}
+
+.custom-option.selected:hover {
+    background: var(--accent-hover);
+    color: white;
 }
 
 /* Placeholder color */
