@@ -93,7 +93,7 @@ button {
     border-radius: 8px;
     border: none;
     background-color: var(--accent);
-    color: white;
+    color: var(--text-main);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -168,7 +168,7 @@ button:active {
 
 .custom-option:hover {
     background: var(--accent-hover);
-    color: white;
+    color: var(--text-main);
 }
 
 .custom-option.selected {
@@ -178,7 +178,7 @@ button:active {
 
 .custom-option.selected:hover {
     background: var(--accent-hover);
-    color: white;
+    color: var(--text-main);
 }
 
 /* Placeholder color */

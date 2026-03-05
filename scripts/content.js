@@ -6,7 +6,8 @@ function repositionCito() {
   let anchor =
     document.querySelector('[aria-label="Start Voice"]') ||
     document.querySelector('[aria-label="Send Prompt"]') ||
-    document.querySelector('button[data-testid="send-button"]');
+    document.querySelector('button[data-testid="send-button"]') ||
+    document.querySelector(".input-buttons-wrapper-bottom");
 
   if (anchor && bubble && menu) {
     const rect = anchor.getBoundingClientRect();

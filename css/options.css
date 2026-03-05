@@ -1,3 +1,13 @@
+:root {
+    --bg-color: #242424;
+    --text-main: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --accent: #6aacea;
+    --accent-hover: #97cbfb;
+    --border: #3f3f46;
+    --input-bg: #242424;
+}
+
 body {
     font-family:
         "Inter",
@@ -15,16 +25,16 @@ body {
     margin: auto;
 }
 .section {
-    background: #242424;
+    background: var(--bg-color);
     padding: 20px 0;
-    border-bottom: 1px solid #3f3f46;
+    border-bottom: 1px solid var(--border);
 }
 .section.last {
     border-bottom: none;
 }
 h2 {
     margin-top: 0;
-    color: #6aacea;
+    color: var(--accent);
     text-transform: uppercase;
 }
 .item-list {
@@ -44,18 +54,18 @@ h2 {
     font-weight: bold;
 }
 input {
-    background: #242424;
-    border: 1px solid #3f3f46;
-    color: white;
+    background: var(--bg-color);
+    border: 1px solid var(--border);
+    color: var(--text-main);
     padding: 10px;
     border-radius: 6px;
     width: 85%;
 }
 
 textarea {
-    background: #242424;
-    border: 1px solid #3f3f46;
-    color: white;
+    background: var(--bg-color);
+    border: 1px solid var(--border);
+    color: var(--text-main);
     padding: 10px;
     border-radius: 6px;
     width: 100%;
@@ -71,9 +81,9 @@ textarea::-webkit-scrollbar {
 }
 
 button.add-btn {
-    background: #6aacea;
+    background: var(--accent);
     border: none;
-    color: white;
+    color: var(--text-main);
     padding: 10px 15px;
     border-radius: 6px;
     cursor: pointer;
