@@ -20,39 +20,115 @@ body {
     color: #f4f4f5;
     padding: 40px;
 }
+
 .container {
     max-width: 600px;
     margin: auto;
 }
+
 .section {
     background: var(--bg-color);
     padding: 20px 0;
     border-bottom: 1px solid var(--border);
 }
+
 .section.last {
     border-bottom: none;
 }
+
 h2 {
     margin-top: 0;
     color: var(--accent);
     text-transform: uppercase;
 }
+
 .item-list {
     margin: 15px 0;
 }
+
 .item {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     background: #303030;
     padding: 8px 12px;
     margin-bottom: 5px;
     border-radius: 6px;
 }
+
+.edit-btn {
+    background: transparent;
+    border: none;
+    margin-right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 4px;
+
+    /* hidden by default, shown when parent .item is hovered */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(2px);
+    transition:
+        opacity 150ms ease,
+        visibility 150ms ease,
+        transform 150ms ease;
+    pointer-events: none;
+}
+
 .remove-btn {
+    background: transparent;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: #ef4444;
     cursor: pointer;
+    text-decoration: none;
+    border-radius: 4px;
     font-weight: bold;
+
+    /* hidden by default, shown when parent .item is hovered */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition:
+        opacity 150ms ease,
+        visibility 150ms ease,
+        transform 150ms ease;
+    pointer-events: none;
 }
+
+/* Show action buttons when the item is hovered */
+.item:hover .edit-btn,
+.item:hover .remove-btn {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(2px);
+    color: var(--text-main);
+}
+
+/* size SVG icons inside action buttons */
+.edit-btn .icon,
+.remove-btn .icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+/* keyboard accessibility: reveal on focus within the item */
+.item:focus-within .edit-btn,
+.item:focus-within .remove-btn {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
 input {
     background: var(--bg-color);
     border: 1px solid var(--border);
@@ -76,6 +152,7 @@ textarea {
 
     scrollbar-width: none;
 }
+
 textarea::-webkit-scrollbar {
     display: none;
 }

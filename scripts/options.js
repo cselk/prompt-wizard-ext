@@ -69,7 +69,14 @@ function renderList(category, items) {
     div.className = "item";
     div.innerHTML = `
             <span>${item}</span>
-            <span class="remove-btn" data-index="${index}" data-category="${category}">&#x00D7</span>
+            <div>
+              <span class="edit-btn" data-index="${index}" data-category="${category}">
+                <img src="assets/edit.svg" class="icon" alt="">
+              </span>
+              <span class="remove-btn" data-index="${index}" data-category="${category}">
+                <img src="assets/trash.svg" class="icon" alt="">
+              </span>
+            </div>
         `;
     container.appendChild(div);
   });
