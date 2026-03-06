@@ -67,17 +67,41 @@ function renderList(category, items) {
   items.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "item";
-    div.innerHTML = `
-            <span>${item}</span>
-            <div>
-              <span class="edit-btn" data-index="${index}" data-category="${category}">
-                <img src="assets/edit.svg" class="icon" alt="">
-              </span>
-              <span class="remove-btn" data-index="${index}" data-category="${category}">
-                <img src="assets/trash.svg" class="icon" alt="">
-              </span>
-            </div>
-        `;
+
+    // use textContent for untrusted text to avoid HTML injection
+    const label = document.createElement("span");
+    label.textContent = item;
+
+    const controls = document.createElement("div");
+
+    const editBtn = document.createElement("span");
+    editBtn.className = "edit-btn";
+    editBtn.dataset.index = String(index);
+    editBtn.dataset.category = String(category);
+
+    const editImg = document.createElement("img");
+    editImg.src = "assets/edit.svg";
+    editImg.className = "icon";
+    editImg.alt = "";
+    editBtn.appendChild(editImg);
+
+    const removeBtn = document.createElement("span");
+    removeBtn.className = "remove-btn";
+    removeBtn.dataset.index = String(index);
+    removeBtn.dataset.category = String(category);
+
+    const removeImg = document.createElement("img");
+    removeImg.src = "assets/trash.svg";
+    removeImg.className = "icon";
+    removeImg.alt = "";
+    removeBtn.appendChild(removeImg);
+
+    controls.appendChild(editBtn);
+    controls.appendChild(removeBtn);
+
+    div.appendChild(label);
+    div.appendChild(controls);
+
     container.appendChild(div);
   });
 
@@ -93,7 +117,9 @@ function renderList(category, items) {
     btn.addEventListener("click", (e) => {
       const category = e.currentTarget.getAttribute("data-category");
       const index = parseInt(e.currentTarget.getAttribute("data-index"));
-      const itemText = e.currentTarget.closest(".item").querySelector("span").textContent;
+      const itemText = e.currentTarget
+        .closest(".item")
+        .querySelector("span").textContent;
       openEditModal(category, index, itemText);
     });
   });
@@ -230,8 +256,12 @@ function saveEditModal() {
   });
 }
 
-document.getElementById("modal-cancel-btn").addEventListener("click", closeEditModal);
-document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
+document
+  .getElementById("modal-cancel-btn")
+  .addEventListener("click", closeEditModal);
+document
+  .getElementById("modal-save-btn")
+  .addEventListener("click", saveEditModal);
 
 modalInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") saveEditModal();
@@ -242,5 +272,6 @@ editModal.addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && editModal.classList.contains("is-open")) closeEditModal();
+  if (e.key === "Escape" && editModal.classList.contains("is-open"))
+    closeEditModal();
 });
