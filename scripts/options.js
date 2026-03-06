@@ -67,10 +67,41 @@ function renderList(category, items) {
   items.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "item";
-    div.innerHTML = `
-            <span>${item}</span>
-            <span class="remove-btn" data-index="${index}" data-category="${category}">&#x00D7</span>
-        `;
+
+    // use textContent for untrusted text to avoid HTML injection
+    const label = document.createElement("span");
+    label.textContent = item;
+
+    const controls = document.createElement("div");
+
+    const editBtn = document.createElement("span");
+    editBtn.className = "edit-btn";
+    editBtn.dataset.index = String(index);
+    editBtn.dataset.category = String(category);
+
+    const editImg = document.createElement("img");
+    editImg.src = "assets/edit.svg";
+    editImg.className = "icon";
+    editImg.alt = "";
+    editBtn.appendChild(editImg);
+
+    const removeBtn = document.createElement("span");
+    removeBtn.className = "remove-btn";
+    removeBtn.dataset.index = String(index);
+    removeBtn.dataset.category = String(category);
+
+    const removeImg = document.createElement("img");
+    removeImg.src = "assets/trash.svg";
+    removeImg.className = "icon";
+    removeImg.alt = "";
+    removeBtn.appendChild(removeImg);
+
+    controls.appendChild(editBtn);
+    controls.appendChild(removeBtn);
+
+    div.appendChild(label);
+    div.appendChild(controls);
+
     container.appendChild(div);
   });
 
@@ -79,6 +110,17 @@ function renderList(category, items) {
       const cat = e.target.getAttribute("data-category");
       const idx = parseInt(e.target.getAttribute("data-index"));
       removeItem(cat, idx);
+    });
+  });
+
+  container.querySelectorAll(".edit-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const category = e.currentTarget.getAttribute("data-category");
+      const index = parseInt(e.currentTarget.getAttribute("data-index"));
+      const itemText = e.currentTarget
+        .closest(".item")
+        .querySelector("span").textContent;
+      openEditModal(category, index, itemText);
     });
   });
 }
@@ -173,3 +215,63 @@ function removeSnippet(index) {
     chrome.storage.sync.set({ snippets: list }, () => renderSnippetList(list));
   });
 }
+
+// ── Edit Modal ────────────────────────────────────────────────
+const editModal = document.getElementById("edit-modal");
+const modalInput = document.getElementById("modal-input");
+const modalTitle = document.getElementById("modal-title");
+
+let _editCategory = null;
+let _editIndex = null;
+
+function openEditModal(category, index, currentValue) {
+  _editCategory = category;
+  _editIndex = index;
+  modalTitle.textContent = `Edit ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+  modalInput.value = currentValue ?? "";
+  editModal.classList.add("is-open");
+  editModal.setAttribute("aria-hidden", "false");
+  modalInput.focus();
+  modalInput.select();
+}
+
+function closeEditModal() {
+  editModal.classList.remove("is-open");
+  editModal.setAttribute("aria-hidden", "true");
+  _editCategory = null;
+  _editIndex = null;
+}
+
+function saveEditModal() {
+  const newValue = modalInput.value.trim();
+  if (!newValue || _editCategory === null || _editIndex === null) return;
+
+  chrome.storage.sync.get(_editCategory, (data) => {
+    const list = data[_editCategory];
+    list[_editIndex] = newValue;
+    chrome.storage.sync.set({ [_editCategory]: list }, () => {
+      renderList(_editCategory, list);
+      closeEditModal();
+    });
+  });
+}
+
+document
+  .getElementById("modal-cancel-btn")
+  .addEventListener("click", closeEditModal);
+document
+  .getElementById("modal-save-btn")
+  .addEventListener("click", saveEditModal);
+
+modalInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") saveEditModal();
+});
+
+editModal.addEventListener("click", (e) => {
+  if (e.target === editModal) closeEditModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && editModal.classList.contains("is-open"))
+    closeEditModal();
+});
