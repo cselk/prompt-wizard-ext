@@ -236,13 +236,11 @@ button.add-btn {
 
 .modal-btn--cancel {
     background: transparent;
-    border: 1px solid var(--border);
     color: var(--text-muted);
 }
 
 .modal-btn--cancel:hover {
     color: var(--text-main);
-    border-color: var(--text-muted);
 }
 
 .modal-btn--save {
