@@ -107,8 +107,8 @@ function renderList(category, items) {
 
   container.querySelectorAll(".remove-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      const cat = e.target.getAttribute("data-category");
-      const idx = parseInt(e.target.getAttribute("data-index"));
+      const cat = e.currentTarget.getAttribute("data-category");
+      const idx = parseInt(e.currentTarget.getAttribute("data-index"));
       removeItem(cat, idx);
     });
   });
