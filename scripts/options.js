@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".add-btn[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
       const category = button.getAttribute("data-category");
-      addItem(category);
+      openModal({ mode: "create", category });
     });
   });
 
@@ -125,21 +125,6 @@ function renderList(category, items) {
   });
 }
 
-function addItem(category) {
-  const input = document.getElementById(`new-${category}`);
-  const newItem = input.value.trim();
-  if (!newItem) return;
-
-  chrome.storage.sync.get(category, (data) => {
-    const list = data[category];
-    list.push(newItem);
-    chrome.storage.sync.set({ [category]: list }, () => {
-      renderList(category, list);
-      input.value = "";
-    });
-  });
-}
-
 function removeItem(category, index) {
   chrome.storage.sync.get(category, (data) => {
     const list = data[category];
@@ -216,55 +201,82 @@ function removeSnippet(index) {
   });
 }
 
-// ── Edit Modal ────────────────────────────────────────────────
+// ── Modal (shared for create & edit) ─────────────────────────
 const editModal = document.getElementById("edit-modal");
 const modalInput = document.getElementById("modal-input");
 const modalTitle = document.getElementById("modal-title");
+const modalSaveBtn = document.getElementById("modal-save-btn");
 
+let _modalMode = null;     // "create" | "edit"
 let _editCategory = null;
 let _editIndex = null;
 
-function openEditModal(category, index, currentValue) {
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function openModal({ mode, category, index = null, currentValue = "" }) {
+  _modalMode = mode;
   _editCategory = category;
   _editIndex = index;
-  modalTitle.textContent = `Edit ${category.charAt(0).toUpperCase() + category.slice(1)}`;
-  modalInput.value = currentValue ?? "";
+
+  modalTitle.textContent = mode === "create"
+    ? `New ${capitalize(category)}`
+    : `Edit ${capitalize(category)}`;
+
+  modalSaveBtn.textContent = mode === "create" ? "Create" : "Save";
+
+  modalInput.value = currentValue;
   editModal.classList.add("is-open");
   editModal.setAttribute("aria-hidden", "false");
   modalInput.focus();
-  modalInput.select();
+  if (mode === "edit") modalInput.select();
+}
+
+// Keep backward-compatible alias used by renderList
+function openEditModal(category, index, currentValue) {
+  openModal({ mode: "edit", category, index, currentValue });
 }
 
 function closeEditModal() {
   editModal.classList.remove("is-open");
   editModal.setAttribute("aria-hidden", "true");
+  _modalMode = null;
   _editCategory = null;
   _editIndex = null;
 }
 
-function saveEditModal() {
-  const newValue = modalInput.value.trim();
-  if (!newValue || _editCategory === null || _editIndex === null) return;
+function saveModal() {
+  const value = modalInput.value.trim();
+  if (!value || !_editCategory) return;
 
-  chrome.storage.sync.get(_editCategory, (data) => {
-    const list = data[_editCategory];
-    list[_editIndex] = newValue;
-    chrome.storage.sync.set({ [_editCategory]: list }, () => {
-      renderList(_editCategory, list);
-      closeEditModal();
+  if (_modalMode === "create") {
+    chrome.storage.sync.get(_editCategory, (data) => {
+      const list = data[_editCategory];
+      list.push(value);
+      chrome.storage.sync.set({ [_editCategory]: list }, () => {
+        renderList(_editCategory, list);
+        closeEditModal();
+      });
     });
-  });
+  } else {
+    if (_editIndex === null) return;
+    chrome.storage.sync.get(_editCategory, (data) => {
+      const list = data[_editCategory];
+      list[_editIndex] = value;
+      chrome.storage.sync.set({ [_editCategory]: list }, () => {
+        renderList(_editCategory, list);
+        closeEditModal();
+      });
+    });
+  }
 }
 
-document
-  .getElementById("modal-cancel-btn")
-  .addEventListener("click", closeEditModal);
-document
-  .getElementById("modal-save-btn")
-  .addEventListener("click", saveEditModal);
+document.getElementById("modal-cancel-btn").addEventListener("click", closeEditModal);
+modalSaveBtn.addEventListener("click", saveModal);
 
 modalInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") saveEditModal();
+  if (e.key === "Enter") saveModal();
 });
 
 editModal.addEventListener("click", (e) => {
