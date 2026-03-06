@@ -91,9 +91,10 @@ function renderList(category, items) {
 
   container.querySelectorAll(".edit-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      const item = e.currentTarget.closest(".item");
-      const itemText = item.querySelector("span").textContent;
-      openEditModal(itemText);
+      const category = e.currentTarget.getAttribute("data-category");
+      const index = parseInt(e.currentTarget.getAttribute("data-index"));
+      const itemText = e.currentTarget.closest(".item").querySelector("span").textContent;
+      openEditModal(category, index, itemText);
     });
   });
 }
@@ -192,21 +193,49 @@ function removeSnippet(index) {
 // ── Edit Modal ────────────────────────────────────────────────
 const editModal = document.getElementById("edit-modal");
 const modalInput = document.getElementById("modal-input");
+const modalTitle = document.getElementById("modal-title");
 
-function openEditModal(currentValue) {
+let _editCategory = null;
+let _editIndex = null;
+
+function openEditModal(category, index, currentValue) {
+  _editCategory = category;
+  _editIndex = index;
+  modalTitle.textContent = `Edit ${category.charAt(0).toUpperCase() + category.slice(1)}`;
   modalInput.value = currentValue ?? "";
   editModal.classList.add("is-open");
   editModal.setAttribute("aria-hidden", "false");
   modalInput.focus();
+  modalInput.select();
 }
 
 function closeEditModal() {
   editModal.classList.remove("is-open");
   editModal.setAttribute("aria-hidden", "true");
+  _editCategory = null;
+  _editIndex = null;
+}
+
+function saveEditModal() {
+  const newValue = modalInput.value.trim();
+  if (!newValue || _editCategory === null || _editIndex === null) return;
+
+  chrome.storage.sync.get(_editCategory, (data) => {
+    const list = data[_editCategory];
+    list[_editIndex] = newValue;
+    chrome.storage.sync.set({ [_editCategory]: list }, () => {
+      renderList(_editCategory, list);
+      closeEditModal();
+    });
+  });
 }
 
 document.getElementById("modal-cancel-btn").addEventListener("click", closeEditModal);
-document.getElementById("modal-save-btn").addEventListener("click", closeEditModal);
+document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
+
+modalInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") saveEditModal();
+});
 
 editModal.addEventListener("click", (e) => {
   if (e.target === editModal) closeEditModal();
