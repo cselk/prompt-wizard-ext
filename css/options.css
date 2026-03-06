@@ -165,3 +165,91 @@ button.add-btn {
     border-radius: 6px;
     cursor: pointer;
 }
+
+/* ── Edit Modal ───────────────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 150ms ease,
+        visibility 150ms ease;
+}
+
+.modal-overlay.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal {
+    background: #303030;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    transform: translateY(8px);
+    transition: transform 150ms ease;
+}
+
+.modal-overlay.is-open .modal {
+    transform: translateY(0);
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modal-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.modal-btn {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.modal-btn--cancel {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+.modal-btn--cancel:hover {
+    color: var(--text-main);
+    border-color: var(--text-muted);
+}
+
+.modal-btn--save {
+    background: var(--accent);
+    color: var(--text-main);
+}
+
+.modal-btn--save:hover {
+    background: var(--accent-hover);
+}

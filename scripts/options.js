@@ -88,6 +88,14 @@ function renderList(category, items) {
       removeItem(cat, idx);
     });
   });
+
+  container.querySelectorAll(".edit-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const item = e.currentTarget.closest(".item");
+      const itemText = item.querySelector("span").textContent;
+      openEditModal(itemText);
+    });
+  });
 }
 
 function addItem(category) {
@@ -180,3 +188,30 @@ function removeSnippet(index) {
     chrome.storage.sync.set({ snippets: list }, () => renderSnippetList(list));
   });
 }
+
+// ── Edit Modal ────────────────────────────────────────────────
+const editModal = document.getElementById("edit-modal");
+const modalInput = document.getElementById("modal-input");
+
+function openEditModal(currentValue) {
+  modalInput.value = currentValue ?? "";
+  editModal.classList.add("is-open");
+  editModal.setAttribute("aria-hidden", "false");
+  modalInput.focus();
+}
+
+function closeEditModal() {
+  editModal.classList.remove("is-open");
+  editModal.setAttribute("aria-hidden", "true");
+}
+
+document.getElementById("modal-cancel-btn").addEventListener("click", closeEditModal);
+document.getElementById("modal-save-btn").addEventListener("click", closeEditModal);
+
+editModal.addEventListener("click", (e) => {
+  if (e.target === editModal) closeEditModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && editModal.classList.contains("is-open")) closeEditModal();
+});
