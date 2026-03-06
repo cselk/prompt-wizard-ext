@@ -210,6 +210,7 @@ function removeSnippet(index) {
 // ── Modal (shared for create & edit) ─────────────────────────
 const editModal = document.getElementById("edit-modal");
 const modalInput = document.getElementById("modal-input");
+const modalDetails = document.getElementById("modal-details");
 const modalTitle = document.getElementById("modal-title");
 const modalSaveBtn = document.getElementById("modal-save-btn");
 
@@ -221,7 +222,7 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function openModal({ mode, category, index = null, currentValue = "" }) {
+function openModal({ mode, category, index = null, currentValue = "", currentDetails = "" }) {
   _modalMode = mode;
   _editCategory = category;
   _editIndex = index;
@@ -234,6 +235,7 @@ function openModal({ mode, category, index = null, currentValue = "" }) {
   modalSaveBtn.textContent = mode === "create" ? "Create" : "Save";
 
   modalInput.value = currentValue;
+  modalDetails.value = currentDetails;
   editModal.classList.add("is-open");
   editModal.setAttribute("aria-hidden", "false");
   modalInput.focus();
@@ -248,6 +250,8 @@ function openEditModal(category, index, currentValue) {
 function closeEditModal() {
   editModal.classList.remove("is-open");
   editModal.setAttribute("aria-hidden", "true");
+  modalInput.value = "";
+  modalDetails.value = "";
   _modalMode = null;
   _editCategory = null;
   _editIndex = null;

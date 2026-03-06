@@ -94,7 +94,14 @@
         <div id="edit-modal" class="modal-overlay" aria-hidden="true">
             <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
                 <h3 id="modal-title" class="modal-title">Edit Item</h3>
-                <input type="text" id="modal-input" class="modal-input" />
+                <div class="modal-field">
+                    <label class="modal-label" for="modal-input">Name</label>
+                    <input type="text" id="modal-input" class="modal-input" placeholder="Short, descriptive name" />
+                </div>
+                <div class="modal-field">
+                    <label class="modal-label" for="modal-details">Details</label>
+                    <textarea id="modal-details" class="modal-details" placeholder="Optional — describe what this item does or when to use it"></textarea>
+                </div>
                 <div class="modal-actions">
                     <button id="modal-cancel-btn" class="modal-btn modal-btn--cancel">Cancel</button>
                     <button id="modal-save-btn" class="modal-btn modal-btn--save">Save</button>
