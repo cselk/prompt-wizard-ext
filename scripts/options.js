@@ -128,6 +128,12 @@ function renderList(category, items) {
 function removeItem(category, index) {
   chrome.storage.sync.get(category, (data) => {
     const list = data[category];
+
+    if (list.length <= 1) {
+      alert("At least one item needs to remain!");
+      return;
+    }
+
     list.splice(index, 1);
     chrome.storage.sync.set({ [category]: list }, () => {
       renderList(category, list);
@@ -207,7 +213,7 @@ const modalInput = document.getElementById("modal-input");
 const modalTitle = document.getElementById("modal-title");
 const modalSaveBtn = document.getElementById("modal-save-btn");
 
-let _modalMode = null;     // "create" | "edit"
+let _modalMode = null; // "create" | "edit"
 let _editCategory = null;
 let _editIndex = null;
 
@@ -220,9 +226,10 @@ function openModal({ mode, category, index = null, currentValue = "" }) {
   _editCategory = category;
   _editIndex = index;
 
-  modalTitle.textContent = mode === "create"
-    ? `New ${capitalize(category)}`
-    : `Edit ${capitalize(category)}`;
+  modalTitle.textContent =
+    mode === "create"
+      ? `New ${capitalize(category)}`
+      : `Edit ${capitalize(category)}`;
 
   modalSaveBtn.textContent = mode === "create" ? "Create" : "Save";
 
@@ -272,7 +279,9 @@ function saveModal() {
   }
 }
 
-document.getElementById("modal-cancel-btn").addEventListener("click", closeEditModal);
+document
+  .getElementById("modal-cancel-btn")
+  .addEventListener("click", closeEditModal);
 modalSaveBtn.addEventListener("click", saveModal);
 
 modalInput.addEventListener("keydown", (e) => {
