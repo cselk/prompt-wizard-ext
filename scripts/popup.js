@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
           container.innerHTML = list
             .map(
               (item, i) => `
-                    <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${item.name}">
+                    <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${item.name}" data-details="${item.details || ""}">
                         ${item.name}
                     </div>
                 `,
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("");
 
           triggerSpan.textContent = list[0].name;
-          promptData[cat] = list[0].name;
+          promptData[cat] = { name: list[0].name, details: list[0].details || "" };
         } else {
           console.warn(`No data or container found for category: ${cat}`);
         }
@@ -106,7 +106,11 @@ function initCustomSelects() {
         .forEach((opt) => opt.classList.remove("selected"));
       option.classList.add("selected");
 
-      promptData[cat] = val;
+      if (cat === "templates") {
+        promptData[cat] = val;
+      } else {
+        promptData[cat] = { name: val, details: option.getAttribute("data-details") || "" };
+      }
 
       option.closest(".custom-select").classList.remove("open");
     });
@@ -121,15 +125,9 @@ document.addEventListener("click", () => {
 });
 
 document.getElementById("generateBtn").addEventListener("click", () => {
-  const currentInput = {
-    persona: promptData.persona || "Expert",
-    operator: promptData.operator || "Assist",
-    format: promptData.format || "Plain Text",
-    input: document.getElementById("input").value || "",
-    context:
-      document.getElementById("context").value || "No additional context.",
-    constraint: document.getElementById("constraint").value || "None.",
-  };
+  const persona = promptData.persona || { name: "Expert", details: "" };
+  const operator = promptData.operator || { name: "Assist", details: "" };
+  const format = promptData.format || { name: "Plain Text", details: "" };
 
   let templateText = selectedTemplateContent;
 
@@ -138,18 +136,20 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     return;
   }
 
-  const keys = [
-    "persona",
-    "operator",
-    "input",
-    "context",
-    "constraint",
-    "format",
-  ];
+  // Substitute {{category.field}} tokens for object-type categories
+  [["persona", persona], ["operator", operator], ["format", format]].forEach(([key, obj]) => {
+    templateText = templateText.replace(new RegExp(`{{${key}\\.name}}`, "g"), obj.name);
+    templateText = templateText.replace(new RegExp(`{{${key}\\.details}}`, "g"), obj.details);
+  });
 
-  keys.forEach((key) => {
-    const regex = new RegExp(`{{${key}}}`, "g");
-    templateText = templateText.replace(regex, String(currentInput[key] || ""));
+  // Substitute plain {{token}} for scalar inputs
+  const scalarInput = {
+    input: document.getElementById("input").value || "",
+    context: document.getElementById("context").value || "No additional context.",
+    constraint: document.getElementById("constraint").value || "None.",
+  };
+  Object.entries(scalarInput).forEach(([key, val]) => {
+    templateText = templateText.replace(new RegExp(`{{${key}}}`, "g"), val);
   });
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
