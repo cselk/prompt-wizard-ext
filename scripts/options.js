@@ -224,7 +224,31 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function openModal({ mode, category, index = null, currentValue = "", currentDetails = "" }) {
+const modalPlaceholders = {
+  persona: {
+    name: "e.g. Senior Developer",
+    details:
+      "e.g. A senior software engineer specialized in distributed systems. Prioritise clarity, correctness, and idiomatic code.",
+  },
+  operator: {
+    name: "e.g. Summarize",
+    details:
+      "e.g. Condense the following into the 3 most important points, using plain language suitable for a non-technical audience.",
+  },
+  format: {
+    name: "e.g. Bullet Points",
+    details:
+      "e.g. Present the output as a concise bulleted list. Each point must be a single sentence and start with a strong action verb.",
+  },
+};
+
+function openModal({
+  mode,
+  category,
+  index = null,
+  currentValue = "",
+  currentDetails = "",
+}) {
   _modalMode = mode;
   _editCategory = category;
   _editIndex = index;
@@ -235,6 +259,10 @@ function openModal({ mode, category, index = null, currentValue = "", currentDet
       : `Edit ${capitalize(category)}`;
 
   modalSaveBtn.textContent = mode === "create" ? "Create" : "Save";
+
+  const placeholders = modalPlaceholders[category] || { name: "", details: "" };
+  modalInput.placeholder = placeholders.name;
+  modalDetails.placeholder = placeholders.details;
 
   modalInput.value = currentValue;
   modalDetails.value = currentDetails;
