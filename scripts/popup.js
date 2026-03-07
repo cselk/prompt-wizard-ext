@@ -22,15 +22,15 @@ document.addEventListener("DOMContentLoaded", () => {
           container.innerHTML = list
             .map(
               (item, i) => `
-                    <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${item}">
-                        ${item}
+                    <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${item.name}">
+                        ${item.name}
                     </div>
                 `,
             )
             .join("");
 
-          triggerSpan.textContent = list[0];
-          promptData[cat] = list[0];
+          triggerSpan.textContent = list[0].name;
+          promptData[cat] = list[0].name;
         } else {
           console.warn(`No data or container found for category: ${cat}`);
         }

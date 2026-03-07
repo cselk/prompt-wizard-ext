@@ -70,7 +70,7 @@ function renderList(category, items) {
 
     // use textContent for untrusted text to avoid HTML injection
     const label = document.createElement("span");
-    label.textContent = item;
+    label.textContent = item.name;
 
     const controls = document.createElement("div");
 
@@ -78,6 +78,7 @@ function renderList(category, items) {
     editBtn.className = "edit-btn";
     editBtn.dataset.index = String(index);
     editBtn.dataset.category = String(category);
+    editBtn.dataset.details = item.details || "";
 
     const editImg = document.createElement("img");
     editImg.src = "assets/edit.svg";
@@ -117,10 +118,11 @@ function renderList(category, items) {
     btn.addEventListener("click", (e) => {
       const category = e.currentTarget.getAttribute("data-category");
       const index = parseInt(e.currentTarget.getAttribute("data-index"));
-      const itemText = e.currentTarget
+      const itemName = e.currentTarget
         .closest(".item")
         .querySelector("span").textContent;
-      openEditModal(category, index, itemText);
+      const itemDetails = e.currentTarget.dataset.details || "";
+      openEditModal(category, index, itemName, itemDetails);
     });
   });
 }
@@ -243,8 +245,8 @@ function openModal({ mode, category, index = null, currentValue = "", currentDet
 }
 
 // Keep backward-compatible alias used by renderList
-function openEditModal(category, index, currentValue) {
-  openModal({ mode: "edit", category, index, currentValue });
+function openEditModal(category, index, currentValue, currentDetails = "") {
+  openModal({ mode: "edit", category, index, currentValue, currentDetails });
 }
 
 function closeEditModal() {
@@ -258,13 +260,14 @@ function closeEditModal() {
 }
 
 function saveModal() {
-  const value = modalInput.value.trim();
-  if (!value || !_editCategory) return;
+  const name = modalInput.value.trim();
+  const details = modalDetails.value.trim();
+  if (!name || !_editCategory) return;
 
   if (_modalMode === "create") {
     chrome.storage.sync.get(_editCategory, (data) => {
       const list = data[_editCategory];
-      list.push(value);
+      list.push({ name, details });
       chrome.storage.sync.set({ [_editCategory]: list }, () => {
         renderList(_editCategory, list);
         closeEditModal();
@@ -274,7 +277,7 @@ function saveModal() {
     if (_editIndex === null) return;
     chrome.storage.sync.get(_editCategory, (data) => {
       const list = data[_editCategory];
-      list[_editIndex] = value;
+      list[_editIndex] = { name, details };
       chrome.storage.sync.set({ [_editCategory]: list }, () => {
         renderList(_editCategory, list);
         closeEditModal();

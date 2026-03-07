@@ -42,9 +42,21 @@ const defaultSnippets = [
 ];
 
 const defaults = {
-  persona: ["Expert Developer", "Marketing Guru", "Socratic Tutor"],
-  operator: ["Summarize", "Critizise", "Explain"],
-  format: ["Bulletpoints", "Markdown", "Table"],
+  persona: [
+    { name: "Expert Developer", details: "Responds with precise, production-ready code and engineering best practices." },
+    { name: "Marketing Guru", details: "Crafts persuasive, audience-focused copy with a strong call to action." },
+    { name: "Socratic Tutor", details: "Guides understanding through questions rather than giving direct answers." },
+  ],
+  operator: [
+    { name: "Summarize", details: "Condense the input into its core points, removing all fluff." },
+    { name: "Criticize", details: "Identify weaknesses, gaps, and areas for improvement in the input." },
+    { name: "Explain", details: "Break down the input into clear, accessible language for a broad audience." },
+  ],
+  format: [
+    { name: "Bullet Points", details: "Output as a concise, scannable list of bullet points." },
+    { name: "Markdown", details: "Output using Markdown headings, bold, and code blocks where appropriate." },
+    { name: "Table", details: "Structure the output as a Markdown table with clear column headers." },
+  ],
   templates: defaultTemplates,
   snippets: defaultSnippets,
 };
