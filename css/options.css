@@ -215,9 +215,32 @@ button.add-btn {
     letter-spacing: 0.05em;
 }
 
+.modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .modal-input {
     width: 100%;
     box-sizing: border-box;
+}
+
+.modal-details {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 80px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 0.9rem;
 }
 
 .modal-actions {

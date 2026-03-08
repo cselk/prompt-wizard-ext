@@ -70,7 +70,7 @@ function renderList(category, items) {
 
     // use textContent for untrusted text to avoid HTML injection
     const label = document.createElement("span");
-    label.textContent = item;
+    label.textContent = item.name;
 
     const controls = document.createElement("div");
 
@@ -78,6 +78,7 @@ function renderList(category, items) {
     editBtn.className = "edit-btn";
     editBtn.dataset.index = String(index);
     editBtn.dataset.category = String(category);
+    editBtn.dataset.details = item.details || "";
 
     const editImg = document.createElement("img");
     editImg.src = "assets/edit.svg";
@@ -117,10 +118,11 @@ function renderList(category, items) {
     btn.addEventListener("click", (e) => {
       const category = e.currentTarget.getAttribute("data-category");
       const index = parseInt(e.currentTarget.getAttribute("data-index"));
-      const itemText = e.currentTarget
+      const itemName = e.currentTarget
         .closest(".item")
         .querySelector("span").textContent;
-      openEditModal(category, index, itemText);
+      const itemDetails = e.currentTarget.dataset.details || "";
+      openEditModal(category, index, itemName, itemDetails);
     });
   });
 }
@@ -210,6 +212,7 @@ function removeSnippet(index) {
 // ── Modal (shared for create & edit) ─────────────────────────
 const editModal = document.getElementById("edit-modal");
 const modalInput = document.getElementById("modal-input");
+const modalDetails = document.getElementById("modal-details");
 const modalTitle = document.getElementById("modal-title");
 const modalSaveBtn = document.getElementById("modal-save-btn");
 
@@ -221,7 +224,31 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function openModal({ mode, category, index = null, currentValue = "" }) {
+const modalPlaceholders = {
+  persona: {
+    name: "e.g. Senior Developer",
+    details:
+      "e.g. A senior software engineer specialized in distributed systems. Prioritise clarity, correctness, and idiomatic code.",
+  },
+  operator: {
+    name: "e.g. Summarize",
+    details:
+      "e.g. Condense the following into the 3 most important points, using plain language suitable for a non-technical audience.",
+  },
+  format: {
+    name: "e.g. Bullet Points",
+    details:
+      "e.g. Present the output as a concise bulleted list. Each point must be a single sentence and start with a strong action verb.",
+  },
+};
+
+function openModal({
+  mode,
+  category,
+  index = null,
+  currentValue = "",
+  currentDetails = "",
+}) {
   _modalMode = mode;
   _editCategory = category;
   _editIndex = index;
@@ -233,7 +260,12 @@ function openModal({ mode, category, index = null, currentValue = "" }) {
 
   modalSaveBtn.textContent = mode === "create" ? "Create" : "Save";
 
+  const placeholders = modalPlaceholders[category] || { name: "", details: "" };
+  modalInput.placeholder = placeholders.name;
+  modalDetails.placeholder = placeholders.details;
+
   modalInput.value = currentValue;
+  modalDetails.value = currentDetails;
   editModal.classList.add("is-open");
   editModal.setAttribute("aria-hidden", "false");
   modalInput.focus();
@@ -241,26 +273,29 @@ function openModal({ mode, category, index = null, currentValue = "" }) {
 }
 
 // Keep backward-compatible alias used by renderList
-function openEditModal(category, index, currentValue) {
-  openModal({ mode: "edit", category, index, currentValue });
+function openEditModal(category, index, currentValue, currentDetails = "") {
+  openModal({ mode: "edit", category, index, currentValue, currentDetails });
 }
 
 function closeEditModal() {
   editModal.classList.remove("is-open");
   editModal.setAttribute("aria-hidden", "true");
+  modalInput.value = "";
+  modalDetails.value = "";
   _modalMode = null;
   _editCategory = null;
   _editIndex = null;
 }
 
 function saveModal() {
-  const value = modalInput.value.trim();
-  if (!value || !_editCategory) return;
+  const name = modalInput.value.trim();
+  const details = modalDetails.value.trim();
+  if (!name || !_editCategory) return;
 
   if (_modalMode === "create") {
     chrome.storage.sync.get(_editCategory, (data) => {
       const list = data[_editCategory];
-      list.push(value);
+      list.push({ name, details });
       chrome.storage.sync.set({ [_editCategory]: list }, () => {
         renderList(_editCategory, list);
         closeEditModal();
@@ -270,7 +305,7 @@ function saveModal() {
     if (_editIndex === null) return;
     chrome.storage.sync.get(_editCategory, (data) => {
       const list = data[_editCategory];
-      list[_editIndex] = value;
+      list[_editIndex] = { name, details };
       chrome.storage.sync.set({ [_editCategory]: list }, () => {
         renderList(_editCategory, list);
         closeEditModal();
