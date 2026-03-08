@@ -3,6 +3,15 @@ const promptData = {};
 let allTemplates = [];
 let selectedTemplateContent = "";
 
+function createOptionEl(index, value, label, details) {
+  const div = document.createElement("div");
+  div.className = "custom-option" + (index === 0 ? " selected" : "");
+  div.setAttribute("data-value", value);
+  if (details !== undefined) div.setAttribute("data-details", details);
+  div.textContent = label;
+  return div;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const categories = ["persona", "operator", "format"];
 
@@ -19,18 +28,18 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         if (container && list.length > 0) {
-          container.innerHTML = list
-            .map(
-              (item, i) => `
-                    <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${item.name}" data-details="${item.details || ""}">
-                        ${item.name}
-                    </div>
-                `,
-            )
-            .join("");
+          container.innerHTML = "";
+          list.forEach((item, i) => {
+            container.appendChild(
+              createOptionEl(i, item.name, item.name, item.details || ""),
+            );
+          });
 
           triggerSpan.textContent = list[0].name;
-          promptData[cat] = { name: list[0].name, details: list[0].details || "" };
+          promptData[cat] = {
+            name: list[0].name,
+            details: list[0].details || "",
+          };
         } else {
           console.warn(`No data or container found for category: ${cat}`);
         }
@@ -46,15 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
         `[data-id="templates"] .select-trigger span`,
       );
 
-      container.innerHTML = templateList
-        .map(
-          (t, i) => `
-                  <div class="custom-option ${i === 0 ? "selected" : ""}" data-value="${t.name}">
-                      ${t.name}
-                  </div>
-              `,
-        )
-        .join("");
+      container.innerHTML = "";
+      templateList.forEach((t, i) => {
+        container.appendChild(createOptionEl(i, t.name, t.name));
+      });
 
       triggerSpan.textContent = templateList[0].name;
       selectedTemplateContent = templateList[0].content;
@@ -109,7 +113,10 @@ function initCustomSelects() {
       if (cat === "templates") {
         promptData[cat] = val;
       } else {
-        promptData[cat] = { name: val, details: option.getAttribute("data-details") || "" };
+        promptData[cat] = {
+          name: val,
+          details: option.getAttribute("data-details") || "",
+        };
       }
 
       option.closest(".custom-select").classList.remove("open");
@@ -137,15 +144,26 @@ document.getElementById("generateBtn").addEventListener("click", () => {
   }
 
   // Substitute {{category.field}} tokens for object-type categories
-  [["persona", persona], ["operator", operator], ["format", format]].forEach(([key, obj]) => {
-    templateText = templateText.replace(new RegExp(`{{${key}\\.name}}`, "g"), obj.name);
-    templateText = templateText.replace(new RegExp(`{{${key}\\.details}}`, "g"), obj.details);
+  [
+    ["persona", persona],
+    ["operator", operator],
+    ["format", format],
+  ].forEach(([key, obj]) => {
+    templateText = templateText.replace(
+      new RegExp(`{{${key}\\.name}}`, "g"),
+      obj.name,
+    );
+    templateText = templateText.replace(
+      new RegExp(`{{${key}\\.details}}`, "g"),
+      obj.details,
+    );
   });
 
   // Substitute plain {{token}} for scalar inputs
   const scalarInput = {
     input: document.getElementById("input").value || "",
-    context: document.getElementById("context").value || "No additional context.",
+    context:
+      document.getElementById("context").value || "No additional context.",
     constraint: document.getElementById("constraint").value || "None.",
   };
   Object.entries(scalarInput).forEach(([key, val]) => {
