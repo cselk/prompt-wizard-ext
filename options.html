@@ -8,13 +8,11 @@
         <div class="container">
             <div class="page-header">
                 <h1>Cito Preferences</h1>
-                <button
-                    id="export-btn"
-                    class="export-btn"
-                    title="Export settings to JSON"
-                >
-                    Export
-                </button>
+                <div class="header-actions">
+                    <button id="import-btn" class="export-btn" title="Import settings from JSON">Import</button>
+                    <button id="export-btn" class="export-btn" title="Export settings to JSON">Export</button>
+                    <input type="file" id="import-file-input" accept=".json" style="display:none" />
+                </div>
             </div>
 
             <div class="section">

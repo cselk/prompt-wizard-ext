@@ -28,6 +28,56 @@ function exportSettings() {
   });
 }
 
+/**
+ * Validates and imports settings from a parsed JSON object, writing all
+ * recognised keys to chrome.storage.sync and re-rendering every list.
+ * Unknown keys are ignored; malformed arrays are rejected with an error alert.
+ *
+ * Expected shape mirrors the storage schema in background.js:
+ *   persona/operator/format — Array<{name: string, details: string}>
+ *   templates/snippets      — Array<{name: string, content: string}>
+ *
+ * @param {object} data - Parsed JSON object from the imported file.
+ */
+function importSettings(data) {
+  const categorySchema = (item) =>
+    item && typeof item.name === "string" && typeof item.details === "string";
+  const contentSchema = (item) =>
+    item && typeof item.name === "string" && typeof item.content === "string";
+
+  const validators = {
+    persona: categorySchema,
+    operator: categorySchema,
+    format: categorySchema,
+    templates: contentSchema,
+    snippets: contentSchema,
+  };
+
+  const toSave = {};
+  for (const [key, validate] of Object.entries(validators)) {
+    if (!(key in data)) continue;
+    const list = data[key];
+    if (!Array.isArray(list) || list.length === 0 || !list.every(validate)) {
+      alert(`Import failed: "${key}" is missing or has an invalid format.`);
+      return;
+    }
+    toSave[key] = list;
+  }
+
+  if (Object.keys(toSave).length === 0) {
+    alert("Import failed: no recognisable settings found in the file.");
+    return;
+  }
+
+  chrome.storage.sync.set(toSave, () => {
+    chrome.storage.sync.get([...categories, "templates", "snippets"], (saved) => {
+      categories.forEach((cat) => { if (saved[cat]) renderList(cat, saved[cat]); });
+      if (saved.templates) renderTemplateList(saved.templates);
+      if (saved.snippets) renderSnippetList(saved.snippets);
+    });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.sync.get([...categories, "templates", "snippets"], (data) => {
     categories.forEach((cat) => {
@@ -52,6 +102,26 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("export-btn")
     .addEventListener("click", exportSettings);
+
+  const importFileInput = document.getElementById("import-file-input");
+  document.getElementById("import-btn").addEventListener("click", () => {
+    importFileInput.value = "";
+    importFileInput.click();
+  });
+  importFileInput.addEventListener("change", () => {
+    const file = importFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        importSettings(data);
+      } catch {
+        alert("Import failed: the file is not valid JSON.");
+      }
+    };
+    reader.readAsText(file);
+  });
 });
 
 /**
