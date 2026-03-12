@@ -17,10 +17,11 @@ function repositionCito() {
 
   // Anchor to Voice or Send button
   let anchor =
-    document.querySelector('[aria-label="Start Voice"]') ||
-    document.querySelector('[aria-label="Send Prompt"]') ||
-    document.querySelector('button[data-testid="send-button"]') ||
-    document.querySelector(".input-buttons-wrapper-bottom");
+    document.querySelector('[aria-label="Start Voice"]') || // ChatGPT
+    document.querySelector('[aria-label="Send Prompt"]') || // ChatGPT
+    document.querySelector('button[data-testid="send-button"]') || // ChatGPT
+    document.querySelector(".input-buttons-wrapper-bottom") || // Gemini
+    document.querySelector(".\\!box-content"); // Claude
 
   if (anchor && bubble && menu) {
     const rect = anchor.getBoundingClientRect();
