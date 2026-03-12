@@ -33,7 +33,7 @@
     transform: scale(1.1);
 }
 
-/* The Snippet Menu (Floating below the bubble) */
+/* The Snippet Menu (Floating above the bubble) */
 #snippet-window {
     position: fixed;
     width: 240px;

@@ -33,9 +33,11 @@ function repositionCito() {
     bubble.style.top = `${rect.top + offsetY}px`;
     bubble.style.display = "flex";
 
+    // Align the menu's bottom edge with the bubble so it opens upward
     menu.style.position = "fixed";
     menu.style.left = bubble.style.left;
-    menu.style.top = `${rect.top + 45}px`;
+    menu.style.top = "";
+    menu.style.bottom = `${window.innerHeight - rect.top - offsetY + 10}px`;
   } else if (bubble) {
     // Hide bubble if the chatbox is gone (e.g., navigating to settings)
     bubble.style.display = "none";
