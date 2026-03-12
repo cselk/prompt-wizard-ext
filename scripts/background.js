@@ -1,3 +1,19 @@
+/**
+ * @file background.js
+ * @description Service-worker script that runs once on extension install.
+ * Defines the default data for all storage keys and writes them to
+ * chrome.storage.sync so every other script has a consistent baseline.
+ *
+ * Storage schema
+ * ──────────────
+ * persona   {Array<{name: string, details: string}>}  Role/voice items
+ * operator  {Array<{name: string, details: string}>}  Task-instruction items
+ * format    {Array<{name: string, details: string}>}  Output-format items
+ * templates {Array<{name: string, content: string}>}  Prompt templates
+ * snippets  {Array<{name: string, content: string}>}  Quick-insert snippets
+ */
+
+/** @type {Array<{name: string, content: string}>} */
 const defaultTemplates = [
   {
     name: "Standard",
@@ -31,6 +47,7 @@ Begin the execution now!
   },
 ];
 
+/** @type {Array<{name: string, content: string}>} */
 const defaultSnippets = [
   {
     name: "Fix Grammar",
@@ -46,6 +63,10 @@ const defaultSnippets = [
   },
 ];
 
+/**
+ * Default values written to chrome.storage.sync on first install.
+ * @type {Object}
+ */
 const defaults = {
   persona: [
     {
@@ -100,6 +121,10 @@ const defaults = {
   snippets: defaultSnippets,
 };
 
+/**
+ * Writes the default storage values on fresh install.
+ * Does not run on update or reload, so existing user data is never overwritten.
+ */
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     chrome.storage.sync.set(defaults);

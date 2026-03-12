@@ -1,8 +1,49 @@
+/**
+ * @file popup.js
+ * @description Controls the Cito Builder popup UI. Loads persona, operator,
+ * format, and template data from chrome.storage.sync, renders custom dropdown
+ * menus, and handles prompt generation by substituting template tokens with
+ * the user's selections and free-text inputs before injecting the result into
+ * the active tab's chat input field.
+ *
+ * Template token syntax
+ * ─────────────────────
+ * Object categories (persona, operator, format) expose two tokens each:
+ *   {{persona.name}}     — the short display name of the selected persona
+ *   {{persona.details}}  — the full instruction text of the selected persona
+ *   (same pattern for operator and format)
+ *
+ * Scalar inputs use plain tokens:
+ *   {{input}}      — the user's main input textarea value
+ *   {{context}}    — the context textarea value
+ *   {{constraint}} — the constraint input value
+ */
+
+/**
+ * Accumulated selections from all custom dropdowns, keyed by category id.
+ * - persona / operator / format: `{name: string, details: string}`
+ * - templates: `string` (template name, used only for lookup)
+ *
+ * @type {Object}
+ */
 const promptData = {};
 
+/** Full list of template objects loaded from storage, kept for name→content lookup. @type {Array<{name: string, content: string}>} */
 let allTemplates = [];
+
+/** Content string of the currently selected template. @type {string} */
 let selectedTemplateContent = "";
 
+/**
+ * Creates a single `.custom-option` div element using safe DOM APIs so that
+ * user-controlled strings are never parsed as HTML.
+ *
+ * @param {number} index   - Position in the list; index 0 receives the "selected" class.
+ * @param {string} value   - Value stored in `data-value` (the item's name).
+ * @param {string} label   - Visible text content of the option.
+ * @param {string} [details] - Optional value stored in `data-details` (omitted for templates).
+ * @returns {HTMLDivElement}
+ */
 function createOptionEl(index, value, label, details) {
   const div = document.createElement("div");
   div.className = "custom-option" + (index === 0 ? " selected" : "");
@@ -69,6 +110,17 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 });
 
+/**
+ * Attaches click listeners to all `.select-trigger` and `.custom-options`
+ * elements. Existing listeners are removed first by replacing each trigger
+ * with a deep clone, preventing duplicate handlers when this function is
+ * called after a re-render.
+ *
+ * For object categories (persona, operator, format) the selected item is
+ * stored in `promptData` as `{name, details}`. For the templates category
+ * only the name string is stored; the matching content is read from
+ * `allTemplates` and assigned to `selectedTemplateContent`.
+ */
 function initCustomSelects() {
   // Replace triggers to remove any existing listeners before re-attaching
   document.querySelectorAll(".select-trigger").forEach((trigger) => {
@@ -131,6 +183,18 @@ document.addEventListener("click", () => {
     .forEach((s) => s.classList.remove("open"));
 });
 
+/**
+ * Handles the "Craft Prompt" button click. Reads the current selections from
+ * `promptData` and the scalar text inputs, then performs two passes of token
+ * substitution on `selectedTemplateContent`:
+ *
+ * 1. `{{category.name}}` / `{{category.details}}` for persona, operator, format.
+ * 2. `{{input}}`, `{{context}}`, `{{constraint}}` for free-text fields.
+ *
+ * The resulting string is injected into the active tab's chat input via
+ * `chrome.scripting.executeScript`, using `execCommand("insertText")` so that
+ * the host page's input event listeners fire correctly.
+ */
 document.getElementById("generateBtn").addEventListener("click", () => {
   const persona = promptData.persona || { name: "Expert", details: "" };
   const operator = promptData.operator || { name: "Assist", details: "" };

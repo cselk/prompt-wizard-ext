@@ -1,3 +1,13 @@
+/**
+ * @file options.js
+ * @description Controls the Cito Preferences page (options.html). Handles
+ * rendering and CRUD operations for the three prompt-builder categories
+ * (persona, operator, format) as well as the template gallery and snippet
+ * manager. All category mutations go through a shared modal that supports
+ * both "create" and "edit" modes.
+ */
+
+/** Category keys that use the shared `{name, details}` item schema. @type {string[]} */
 const categories = ["persona", "operator", "format"];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -59,6 +69,15 @@ document.getElementById("save-snippet-btn").addEventListener("click", () => {
   });
 });
 
+/**
+ * Renders the item list for a single category into its corresponding
+ * `#<category>-list` container. Each item gets an edit button (which opens
+ * the shared modal pre-filled with the item's current values) and a remove
+ * button. All text is set via `textContent` / `dataset` to prevent XSS.
+ *
+ * @param {string} category - One of "persona", "operator", or "format".
+ * @param {Array<{name: string, details: string}>} items - Items to render.
+ */
 function renderList(category, items) {
   const container = document.getElementById(`${category}-list`);
   if (!container) return;
@@ -127,6 +146,13 @@ function renderList(category, items) {
   });
 }
 
+/**
+ * Removes the item at `index` from the given category in storage and
+ * re-renders the list. Refuses to remove the last remaining item.
+ *
+ * @param {string} category - Category key in chrome.storage.sync.
+ * @param {number} index    - Zero-based index of the item to remove.
+ */
 function removeItem(category, index) {
   chrome.storage.sync.get(category, (data) => {
     const list = data[category];
@@ -143,6 +169,13 @@ function removeItem(category, index) {
   });
 }
 
+/**
+ * Renders the template gallery list. Each entry shows the template name in
+ * bold with a remove button. Templates are read-only in the list view; new
+ * ones are added via the inline form above.
+ *
+ * @param {Array<{name: string, content: string}>} items - Templates to render.
+ */
 function renderTemplateList(items) {
   const container = document.getElementById("template-list");
   container.innerHTML = "";
@@ -167,6 +200,11 @@ function renderTemplateList(items) {
   });
 }
 
+/**
+ * Removes the template at `index` from storage and re-renders the gallery.
+ *
+ * @param {number} index - Zero-based index of the template to remove.
+ */
 function removeTemplate(index) {
   chrome.storage.sync.get(["templates"], (data) => {
     const list = data.templates;
@@ -177,6 +215,12 @@ function removeTemplate(index) {
   });
 }
 
+/**
+ * Renders the snippet manager list. Each entry shows the snippet name in bold
+ * with a remove button.
+ *
+ * @param {Array<{name: string, content: string}>} items - Snippets to render.
+ */
 function renderSnippetList(items) {
   const container = document.getElementById("snippet-list");
   container.innerHTML = "";
@@ -201,6 +245,11 @@ function renderSnippetList(items) {
   });
 }
 
+/**
+ * Removes the snippet at `index` from storage and re-renders the list.
+ *
+ * @param {number} index - Zero-based index of the snippet to remove.
+ */
 function removeSnippet(index) {
   chrome.storage.sync.get(["snippets"], (data) => {
     const list = data.snippets;
@@ -210,20 +259,42 @@ function removeSnippet(index) {
 }
 
 // ── Modal (shared for create & edit) ─────────────────────────
+
+/** @type {HTMLElement} The modal overlay element. */
 const editModal = document.getElementById("edit-modal");
+/** @type {HTMLInputElement} The name text input inside the modal. */
 const modalInput = document.getElementById("modal-input");
+/** @type {HTMLTextAreaElement} The details textarea inside the modal. */
 const modalDetails = document.getElementById("modal-details");
+/** @type {HTMLElement} The modal's `<h3>` title element. */
 const modalTitle = document.getElementById("modal-title");
+/** @type {HTMLButtonElement} The modal's primary action button. */
 const modalSaveBtn = document.getElementById("modal-save-btn");
 
-let _modalMode = null; // "create" | "edit"
+/** @type {"create"|"edit"|null} Current modal mode. */
+let _modalMode = null;
+/** @type {string|null} Category key the modal is currently operating on. */
 let _editCategory = null;
+/** @type {number|null} Index of the item being edited, or null in create mode. */
 let _editIndex = null;
 
+/**
+ * Capitalises the first character of a string.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
 function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/**
+ * Per-category placeholder text shown in the modal's name and details fields.
+ * Placeholders are concrete examples that illustrate the expected input,
+ * making clear that `details` is the text later injected into the template.
+ *
+ * @type {Object.<string, {name: string, details: string}>}
+ */
 const modalPlaceholders = {
   persona: {
     name: "e.g. Senior Developer",
@@ -242,6 +313,17 @@ const modalPlaceholders = {
   },
 };
 
+/**
+ * Opens the shared modal in either "create" or "edit" mode and populates it
+ * with the correct title, button label, placeholders, and pre-filled values.
+ *
+ * @param {object}  opts
+ * @param {"create"|"edit"} opts.mode          - Whether this is a new item or editing an existing one.
+ * @param {string}  opts.category              - Category key (e.g. "persona").
+ * @param {number|null} [opts.index=null]      - Index of the item to edit (edit mode only).
+ * @param {string}  [opts.currentValue=""]     - Pre-fill value for the name field (edit mode).
+ * @param {string}  [opts.currentDetails=""]   - Pre-fill value for the details field (edit mode).
+ */
 function openModal({
   mode,
   category,
@@ -272,11 +354,20 @@ function openModal({
   if (mode === "edit") modalInput.select();
 }
 
+/**
+ * Convenience wrapper around `openModal` for edit mode, used by `renderList`.
+ *
+ * @param {string} category       - Category key.
+ * @param {number} index          - Index of the item to edit.
+ * @param {string} currentValue   - Current name of the item.
+ * @param {string} [currentDetails=""] - Current details of the item.
+ */
 // Keep backward-compatible alias used by renderList
 function openEditModal(category, index, currentValue, currentDetails = "") {
   openModal({ mode: "edit", category, index, currentValue, currentDetails });
 }
 
+/** Closes the modal, resets both input fields, and clears modal state. */
 function closeEditModal() {
   editModal.classList.remove("is-open");
   editModal.setAttribute("aria-hidden", "true");
@@ -287,6 +378,12 @@ function closeEditModal() {
   _editIndex = null;
 }
 
+/**
+ * Reads the modal's name and details fields and persists the item to
+ * chrome.storage.sync. In create mode a new `{name, details}` object is
+ * appended to the list; in edit mode the existing entry at `_editIndex` is
+ * replaced. The list is re-rendered and the modal is closed on success.
+ */
 function saveModal() {
   const name = modalInput.value.trim();
   const details = modalDetails.value.trim();

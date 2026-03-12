@@ -1,3 +1,16 @@
+/**
+ * @file content.js
+ * @description Content script injected into AI chat pages (e.g. ChatGPT).
+ * Renders a floating bubble that opens a snippet picker, and provides a
+ * shared text-insertion helper used by both the bubble and the popup.
+ */
+
+/**
+ * Positions the floating bubble and its snippet menu relative to the chat
+ * input's action buttons. Tries several well-known selectors so it works
+ * across ChatGPT UI versions. Hides the bubble when no anchor is found
+ * (e.g. when the user navigates away from the chat view).
+ */
 function repositionCito() {
   const bubble = document.querySelector(".cito-floating-bubble");
   const menu = document.getElementById("snippet-window");
@@ -28,6 +41,13 @@ function repositionCito() {
   }
 }
 
+/**
+ * Creates the floating bubble and snippet-picker menu and appends them to
+ * the page body. Loads snippets from chrome.storage.sync and builds a menu
+ * item for each one. Clicking a snippet item inserts its content into the
+ * active chat input and closes the menu. Guards against double-initialisation
+ * so it is safe to call repeatedly from the polling interval.
+ */
 function initCitoBubble() {
   if (document.querySelector(".cito-floating-bubble")) return;
 
@@ -73,6 +93,13 @@ function initCitoBubble() {
   repositionCito();
 }
 
+/**
+ * Inserts the given text into the first recognised chat input field on the
+ * page. Uses `execCommand("insertText")` so the host application's input
+ * listeners (React synthetic events, etc.) fire correctly.
+ *
+ * @param {string} text - Plain text to insert at the current cursor position.
+ */
 function insertText(text) {
   const selectors = [
     "#prompt-textarea",
