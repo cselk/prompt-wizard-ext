@@ -10,6 +10,24 @@
 /** Category keys that use the shared `{name, details}` item schema. @type {string[]} */
 const categories = ["persona", "operator", "format"];
 
+/**
+ * Reads all settings from chrome.storage.sync and triggers a browser download
+ * of the data as a formatted JSON file named `cito-settings.json`.
+ */
+function exportSettings() {
+  const allKeys = [...categories, "templates", "snippets"];
+  chrome.storage.sync.get(allKeys, (data) => {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cito-settings.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.sync.get([...categories, "templates", "snippets"], (data) => {
     categories.forEach((cat) => {
@@ -30,6 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
       openModal({ mode: "create", category });
     });
   });
+
+  document
+    .getElementById("export-btn")
+    .addEventListener("click", exportSettings);
 });
 
 /**
@@ -189,9 +211,17 @@ function renderTemplateList(items) {
   container.querySelectorAll(".edit-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const index = parseInt(e.currentTarget.dataset.index);
-      const itemName = e.currentTarget.closest(".item").querySelector("span").textContent;
+      const itemName = e.currentTarget
+        .closest(".item")
+        .querySelector("span").textContent;
       const itemContent = e.currentTarget.dataset.content || "";
-      openModal({ mode: "edit", category: "template", index, currentValue: itemName, currentDetails: itemContent });
+      openModal({
+        mode: "edit",
+        category: "template",
+        index,
+        currentValue: itemName,
+        currentDetails: itemContent,
+      });
     });
   });
 }
@@ -268,9 +298,17 @@ function renderSnippetList(items) {
   container.querySelectorAll(".edit-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const index = parseInt(e.currentTarget.dataset.index);
-      const itemName = e.currentTarget.closest(".item").querySelector("span").textContent;
+      const itemName = e.currentTarget
+        .closest(".item")
+        .querySelector("span").textContent;
       const itemContent = e.currentTarget.dataset.content || "";
-      openModal({ mode: "edit", category: "snippet", index, currentValue: itemName, currentDetails: itemContent });
+      openModal({
+        mode: "edit",
+        category: "snippet",
+        index,
+        currentValue: itemName,
+        currentDetails: itemContent,
+      });
     });
   });
 }
@@ -347,7 +385,7 @@ const modalPlaceholders = {
   template: {
     name: "e.g. Code Reviewer",
     details:
-      "e.g. # ROLE\nYou are a {{persona.name}}. {{persona.details}}\n\n# TASK\n{{operator.details}}\n\nInput: \"{{input}}\"",
+      'e.g. # ROLE\nYou are a {{persona.name}}. {{persona.details}}\n\n# TASK\n{{operator.details}}\n\nInput: "{{input}}"',
   },
   snippet: {
     name: "e.g. 3-bullet Summary",
@@ -439,11 +477,17 @@ function saveModal() {
   const details = modalDetails.value.trim();
   if (!name || !_editCategory) return;
 
-  const isContentType = _editCategory === "template" || _editCategory === "snippet";
-  const storageKey = _editCategory === "template" ? "templates"
-    : _editCategory === "snippet" ? "snippets"
-    : _editCategory;
-  const itemValue = isContentType ? { name, content: details } : { name, details };
+  const isContentType =
+    _editCategory === "template" || _editCategory === "snippet";
+  const storageKey =
+    _editCategory === "template"
+      ? "templates"
+      : _editCategory === "snippet"
+        ? "snippets"
+        : _editCategory;
+  const itemValue = isContentType
+    ? { name, content: details }
+    : { name, details };
 
   const rerender = (list) => {
     if (_editCategory === "template") renderTemplateList(list);
