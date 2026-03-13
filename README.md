@@ -1,82 +1,106 @@
 # Cito — AI Prompt Manager
 
-Cito is a browser extension that helps you craft better prompts and reuse your best ones — without ever leaving ChatGPT, Claude, or Gemini.
+**Version 1.6.4** · Chrome / Chromium extension (Manifest V3)
 
-Instead of typing the same context over and over, Cito lets you build structured prompts from reusable building blocks (personas, operators, formats) and fire them directly into the AI chat input with one click. A floating snippet button also lets you insert saved prompt fragments on the fly.
+Cito is a browser extension that eliminates repetitive prompt writing on ChatGPT, Claude, and Gemini. Build structured prompts from reusable building blocks, inject them into any chat with one click, and keep a library of snippets just a bubble-click away — all without ever leaving the page.
+
+---
+
+## How it works
+
+Cito has two main surfaces:
+
+| Surface | How to open | What it does |
+|---|---|---|
+| **Popup (Prompt Builder)** | Click the Cito toolbar icon | Assembles a full prompt from your saved building blocks and injects it into the active chat |
+| **Floating bubble** | Appears automatically on ChatGPT, Claude, and Gemini | Opens your snippet library so you can insert a saved fragment at the cursor |
 
 ---
 
 ## Features
 
-- **Prompt Builder** — Compose prompts using a template + persona + operator + format structure, with input, context, and constraint fields
-- **Template Gallery** — Save and reuse your own prompt templates with `{{variable}}` placeholders
-- **Snippet Menu** — A floating button inside ChatGPT, Claude, and Gemini that lets you click-to-insert saved prompt snippets
-- **Custom Personas, Operators & Formats** — Build up your own library of reusable prompt components in settings
-- Works across **ChatGPT**, **Claude**, and **Gemini**
+### Prompt Builder
+The popup combines five selectable building blocks with three free-text fields to produce a finished prompt:
+
+- **Template** — the structural scaffold, written with `{{token}}` placeholders
+- **Persona** — the role the AI should adopt (e.g. *Senior Architect*, *UX Copywriter*)
+- **Operator** — the task to perform (e.g. *Debug Code*, *Write a Summary*)
+- **Format** — the desired output structure (e.g. *Bullet Points*, *JSON*, *Plain Text*)
+- **Input** — the core request (required)
+- **Context** *(optional)* — background information for the AI
+- **Constraint** *(optional)* — limits or rules to follow
+
+Click **Craft Prompt** and Cito substitutes every token and injects the result directly into the chat input field.
+
+#### Template token syntax
+
+| Token | Replaced with |
+|---|---|
+| `{{persona.name}}` | Display name of the selected persona |
+| `{{persona.details}}` | Full instruction text of the selected persona |
+| `{{operator.name}}` / `{{operator.details}}` | Same for the selected operator |
+| `{{format.name}}` / `{{format.details}}` | Same for the selected format |
+| `{{input}}` | The Input field value |
+| `{{context}}` | The Context field value |
+| `{{constraint}}` | The Constraint field value |
+
+### Floating Snippet Bubble
+A small **Cito bubble** is injected next to the send button on every supported page. Click it to open a menu of your saved snippets — click any snippet to insert its content at the cursor, then dismiss the menu by clicking outside.
+
+### Settings Page
+Manage all your reusable content from one place (`chrome://extensions` → Cito → *Options*, or right-click the toolbar icon):
+
+- **CRUD for Personas, Operators, and Formats** — create, rename, and delete items; each has a *Name* and a *Details* (instruction) field
+- **Template Library** — write templates with `{{token}}` placeholders; both *Name* and *Content* fields are required
+- **Snippet Library** — short reusable fragments; both *Name* and *Content* fields are required
+- **Export / Import** — download all settings as `cito-settings.json` or restore them from a file; the importer validates structure before writing anything
+- **Toast notifications** — every create, update, and delete action surfaces a brief success or error banner in the lower-right corner
 
 ---
 
 ## Installation
 
-Cito is a Chrome extension loaded manually (unpacked). You'll need Chrome or any Chromium-based browser (Edge, Brave, Arc, etc.).
+Cito is loaded as an unpacked extension. You'll need Chrome or any Chromium-based browser (Edge, Brave, Arc, etc.).
 
-1. Download or clone this repository to your computer
-2. Open your browser and navigate to `chrome://extensions`
+1. Download or clone this repository
+2. Go to `chrome://extensions` in your browser
 3. Enable **Developer mode** (toggle in the top-right corner)
-4. Click **Load unpacked**
-5. Select the root folder of this repository (the one containing `manifest.json`)
-6. The Cito icon will appear in your browser toolbar
+4. Click **Load unpacked** and select the repository root (the folder containing `manifest.json`)
+5. The Cito icon appears in your toolbar
 
-> **Tip:** Pin the extension for easy access by clicking the puzzle-piece icon in the toolbar and pinning Cito.
-
----
-
-## Setup
-
-Before using the Prompt Builder, add your reusable building blocks via the **Settings** page:
-
-1. Click the Cito icon in your toolbar
-2. Open **Settings** (or right-click the extension icon → *Options*)
-3. Add your **Personas** — the role you want the AI to adopt (e.g. *Senior Architect*, *UX Copywriter*)
-4. Add your **Operators** — the action you want performed (e.g. *Debug Code*, *Write a Summary*)
-5. Add your **Formats** — how you want the output structured (e.g. *Bullet Points*, *JSON*, *Plain Text*)
-6. Optionally create custom **Templates** using `{{persona}}`, `{{operator}}`, `{{input}}`, `{{context}}`, `{{constraint}}`, and `{{format}}` as placeholders
-7. Add **Snippets** — short, reusable prompt fragments you want to insert quickly while chatting
-
-A default *Standard* template and a few starter snippets are included out of the box.
+> **Tip:** Pin the extension via the puzzle-piece icon for quick access.
 
 ---
 
-## Usage
+## Quick-start
 
-### Building a Prompt
-
-1. Navigate to ChatGPT, Claude, or Gemini (or open the popup from any tab)
-2. Click the **Cito** icon in your toolbar
-3. Select a **Template**, **Persona**, **Operator**, and **Format** from the dropdowns
-4. Fill in the **Input** (what you want done) and optionally add **Context** and a **Constraint**
-5. Click **Craft Prompt** — Cito will inject the fully assembled prompt directly into the chat input
-6. Review and hit Send
-
-### Using the Snippet Menu
-
-While you're on ChatGPT, Claude, or Gemini, a small **Cito bubble** floats near the send button:
-
-1. Click the bubble to open your snippet menu
-2. Click any snippet to instantly insert it into the chat input
-3. Click anywhere else to dismiss the menu
+1. Open **Settings** and create at least one Persona, Operator, Format, and Template
+2. Navigate to ChatGPT, Claude, or Gemini
+3. Click the **Cito** toolbar icon
+4. Choose your building blocks from the dropdowns, fill in the Input field, and click **Craft Prompt**
+5. Cito injects the assembled prompt — review it and hit Send
 
 ---
 
-## Default Content
+## Default content
 
-Cito ships with a few defaults to get you started:
+Cito ships with the following defaults so you can use it immediately:
 
 | Type | Name | Description |
-|------|------|-------------|
-| Template | Standard | A structured system-prompt template with persona, task, context, constraints, and output format sections |
-| Snippet | Fix Grammar | Prompts the AI to correct grammar and flow |
-| Snippet | Review Code | Asks the AI to analyze code for bugs and efficiency |
-| Snippet | Summarize | Requests a 3-bullet-point summary |
+|---|---|---|
+| Template | Standard | Structured system-prompt with persona, task, context, constraints, and output format sections |
+| Snippet | Fix Grammar | Asks the AI to correct grammar and improve flow |
+| Snippet | Review Code | Asks the AI to analyse code for bugs and efficiency |
+| Snippet | Summarize | Requests a concise 3-bullet-point summary |
 
-All defaults can be replaced or extended from the Settings page.
+All defaults can be edited or deleted from the Settings page.
+
+---
+
+## Supported platforms
+
+| Platform | Prompt Builder | Floating Bubble |
+|---|---|---|
+| ChatGPT (`chatgpt.com`) | ✅ | ✅ |
+| Claude (`claude.ai`) | ✅ | ✅ |
+| Gemini (`gemini.google.com`) | ✅ | ✅ |
