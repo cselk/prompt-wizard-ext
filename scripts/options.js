@@ -10,6 +10,84 @@
 /** Category keys that use the shared `{name, details}` item schema. @type {string[]} */
 const categories = ["persona", "operator", "format"];
 
+/**
+ * Reads all settings from chrome.storage.sync and triggers a browser download
+ * of the data as a formatted JSON file named `cito-settings.json`.
+ */
+function exportSettings() {
+  const allKeys = [...categories, "templates", "snippets"];
+  chrome.storage.sync.get(allKeys, (data) => {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cito-settings.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+/**
+ * Validates and imports settings from a parsed JSON object, writing all
+ * recognised keys to chrome.storage.sync and re-rendering every list.
+ * Unknown keys are ignored; malformed arrays are rejected with an error alert.
+ *
+ * Expected shape mirrors the storage schema in background.js:
+ *   persona/operator/format — Array<{name: string, details: string}>
+ *   templates/snippets      — Array<{name: string, content: string}>
+ *
+ * @param {object} data - Parsed JSON object from the imported file.
+ */
+function importSettings(data) {
+  const categorySchema = (item) =>
+    item && typeof item.name === "string" && typeof item.details === "string";
+  const contentSchema = (item) =>
+    item && typeof item.name === "string" && typeof item.content === "string";
+
+  const validators = {
+    persona: categorySchema,
+    operator: categorySchema,
+    format: categorySchema,
+    templates: contentSchema,
+    snippets: contentSchema,
+  };
+
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    alert("Import failed: no recognisable settings found in the file.");
+    return;
+  }
+
+  const toSave = {};
+  for (const [key, validate] of Object.entries(validators)) {
+    if (!(key in data)) continue;
+    const list = data[key];
+    if (!Array.isArray(list) || list.length === 0 || !list.every(validate)) {
+      alert(`Import failed: "${key}" is missing or has an invalid format.`);
+      return;
+    }
+    toSave[key] = list;
+  }
+
+  if (Object.keys(toSave).length === 0) {
+    alert("Import failed: no recognisable settings found in the file.");
+    return;
+  }
+
+  chrome.storage.sync.set(toSave, () => {
+    chrome.storage.sync.get(
+      [...categories, "templates", "snippets"],
+      (saved) => {
+        categories.forEach((cat) => {
+          if (saved[cat]) renderList(cat, saved[cat]);
+        });
+        if (saved.templates) renderTemplateList(saved.templates);
+        if (saved.snippets) renderSnippetList(saved.snippets);
+      },
+    );
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.sync.get([...categories, "templates", "snippets"], (data) => {
     categories.forEach((cat) => {
@@ -31,41 +109,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("save-template-btn").addEventListener("click", () => {
-    const name = document.getElementById("template-name").value.trim();
-    const content = document.getElementById("template-content").value.trim();
+  document
+    .getElementById("export-btn")
+    .addEventListener("click", exportSettings);
 
-    if (!name || !content)
-      return alert("Please provide both a name and content.");
-
-    chrome.storage.sync.get(["templates"], (data) => {
-      const list = data.templates;
-      list.push({ name, content });
-      chrome.storage.sync.set({ templates: list }, () => {
-        renderTemplateList(list);
-        document.getElementById("template-name").value = "";
-        document.getElementById("template-content").value = "";
-      });
-    });
+  const importFileInput = document.getElementById("import-file-input");
+  document.getElementById("import-btn").addEventListener("click", () => {
+    importFileInput.value = "";
+    importFileInput.click();
   });
-});
-
-// Save Snippet
-document.getElementById("save-snippet-btn").addEventListener("click", () => {
-  const name = document.getElementById("snippet-name").value.trim();
-  const content = document.getElementById("snippet-content").value.trim();
-
-  if (!name || !content)
-    return alert("Please provide both a name and content.");
-
-  chrome.storage.sync.get(["snippets"], (data) => {
-    const list = data.snippets;
-    list.push({ name, content });
-    chrome.storage.sync.set({ snippets: list }, () => {
-      renderSnippetList(list);
-      document.getElementById("snippet-name").value = "";
-      document.getElementById("snippet-content").value = "";
-    });
+  importFileInput.addEventListener("change", () => {
+    const file = importFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        importSettings(data);
+      } catch {
+        alert("Import failed: the file is not valid JSON.");
+      }
+    };
+    reader.readAsText(file);
   });
 });
 
@@ -170,9 +235,8 @@ function removeItem(category, index) {
 }
 
 /**
- * Renders the template gallery list. Each entry shows the template name in
- * bold with a remove button. Templates are read-only in the list view; new
- * ones are added via the inline form above.
+ * Renders the template gallery list with edit and remove icon buttons,
+ * matching the same hover-reveal style as the category lists.
  *
  * @param {Array<{name: string, content: string}>} items - Templates to render.
  */
@@ -183,20 +247,66 @@ function renderTemplateList(items) {
     const div = document.createElement("div");
     div.className = "item";
 
-    const nameSpan = document.createElement("span");
-    const nameBold = document.createElement("b");
+    const label = document.createElement("span");
+    label.textContent = item.name;
 
-    nameBold.textContent = item.name;
-    nameSpan.appendChild(nameBold);
+    const controls = document.createElement("div");
+
+    const editBtn = document.createElement("span");
+    editBtn.className = "edit-btn";
+    editBtn.dataset.index = String(index);
+    editBtn.dataset.category = "template";
+    editBtn.dataset.content = item.content || "";
+
+    const editImg = document.createElement("img");
+    editImg.src = "assets/edit.svg";
+    editImg.className = "icon";
+    editImg.alt = "";
+    editBtn.appendChild(editImg);
 
     const removeBtn = document.createElement("span");
     removeBtn.className = "remove-btn";
-    removeBtn.textContent = "\u00D7";
-    removeBtn.onclick = () => removeSnippet(index);
+    removeBtn.dataset.index = String(index);
 
-    div.appendChild(nameSpan);
-    div.appendChild(removeBtn);
+    const removeImg = document.createElement("img");
+    removeImg.src = "assets/trash.svg";
+    removeImg.className = "icon";
+    removeImg.alt = "";
+    removeBtn.appendChild(removeImg);
+
+    controls.appendChild(editBtn);
+    controls.appendChild(removeBtn);
+    div.appendChild(label);
+    div.appendChild(controls);
     container.appendChild(div);
+  });
+
+  container.querySelectorAll(".remove-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      if (items.length <= 1) {
+        return;
+      }
+
+      const idx = parseInt(e.currentTarget.dataset.index);
+      removeTemplate(idx);
+    });
+  });
+
+  container.querySelectorAll(".edit-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const index = parseInt(e.currentTarget.dataset.index);
+      const itemName = e.currentTarget
+        .closest(".item")
+        .querySelector("span").textContent;
+      const itemContent = e.currentTarget.dataset.content || "";
+      openModal({
+        mode: "edit",
+        category: "template",
+        index,
+        currentValue: itemName,
+        currentDetails: itemContent,
+      });
+    });
   });
 }
 
@@ -216,8 +326,8 @@ function removeTemplate(index) {
 }
 
 /**
- * Renders the snippet manager list. Each entry shows the snippet name in bold
- * with a remove button.
+ * Renders the snippet manager list with edit and remove icon buttons,
+ * matching the same hover-reveal style as the category lists.
  *
  * @param {Array<{name: string, content: string}>} items - Snippets to render.
  */
@@ -228,20 +338,66 @@ function renderSnippetList(items) {
     const div = document.createElement("div");
     div.className = "item";
 
-    const nameSpan = document.createElement("span");
-    const nameBold = document.createElement("b");
+    const label = document.createElement("span");
+    label.textContent = item.name;
 
-    nameBold.textContent = item.name;
-    nameSpan.appendChild(nameBold);
+    const controls = document.createElement("div");
+
+    const editBtn = document.createElement("span");
+    editBtn.className = "edit-btn";
+    editBtn.dataset.index = String(index);
+    editBtn.dataset.category = "snippet";
+    editBtn.dataset.content = item.content || "";
+
+    const editImg = document.createElement("img");
+    editImg.src = "assets/edit.svg";
+    editImg.className = "icon";
+    editImg.alt = "";
+    editBtn.appendChild(editImg);
 
     const removeBtn = document.createElement("span");
     removeBtn.className = "remove-btn";
-    removeBtn.textContent = "\u00D7";
-    removeBtn.onclick = () => removeSnippet(index);
+    removeBtn.dataset.index = String(index);
 
-    div.appendChild(nameSpan);
-    div.appendChild(removeBtn);
+    const removeImg = document.createElement("img");
+    removeImg.src = "assets/trash.svg";
+    removeImg.className = "icon";
+    removeImg.alt = "";
+    removeBtn.appendChild(removeImg);
+
+    controls.appendChild(editBtn);
+    controls.appendChild(removeBtn);
+    div.appendChild(label);
+    div.appendChild(controls);
     container.appendChild(div);
+  });
+
+  container.querySelectorAll(".remove-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      if (items.length <= 1) {
+        return;
+      }
+
+      const idx = parseInt(e.currentTarget.dataset.index);
+      removeSnippet(idx);
+    });
+  });
+
+  container.querySelectorAll(".edit-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const index = parseInt(e.currentTarget.dataset.index);
+      const itemName = e.currentTarget
+        .closest(".item")
+        .querySelector("span").textContent;
+      const itemContent = e.currentTarget.dataset.content || "";
+      openModal({
+        mode: "edit",
+        category: "snippet",
+        index,
+        currentValue: itemName,
+        currentDetails: itemContent,
+      });
+    });
   });
 }
 
@@ -264,8 +420,10 @@ function removeSnippet(index) {
 const editModal = document.getElementById("edit-modal");
 /** @type {HTMLInputElement} The name text input inside the modal. */
 const modalInput = document.getElementById("modal-input");
-/** @type {HTMLTextAreaElement} The details textarea inside the modal. */
+/** @type {HTMLTextAreaElement} The details/content textarea inside the modal. */
 const modalDetails = document.getElementById("modal-details");
+/** @type {HTMLElement} The label element for the details/content textarea. */
+const modalDetailsLabel = document.getElementById("modal-details-label");
 /** @type {HTMLElement} The modal's `<h3>` title element. */
 const modalTitle = document.getElementById("modal-title");
 /** @type {HTMLButtonElement} The modal's primary action button. */
@@ -289,9 +447,10 @@ function capitalize(str) {
 }
 
 /**
- * Per-category placeholder text shown in the modal's name and details fields.
- * Placeholders are concrete examples that illustrate the expected input,
- * making clear that `details` is the text later injected into the template.
+ * Per-category placeholder text shown in the modal's name and details/content
+ * fields. Placeholders are concrete examples that illustrate the expected
+ * input, making clear that `details`/`content` is the text later injected
+ * into the template.
  *
  * @type {Object.<string, {name: string, details: string}>}
  */
@@ -311,18 +470,30 @@ const modalPlaceholders = {
     details:
       "e.g. Present the output as a concise bulleted list. Each point must be a single sentence and start with a strong action verb.",
   },
+  template: {
+    name: "e.g. Code Reviewer",
+    details:
+      'e.g. # ROLE\nYou are a {{persona.name}}. {{persona.details}}\n\n# TASK\n{{operator.details}}\n\nInput: "{{input}}"',
+  },
+  snippet: {
+    name: "e.g. 3-bullet Summary",
+    details:
+      "e.g. Summarize the following into exactly 3 bullet points, each starting with a bold keyword: ",
+  },
 };
 
 /**
  * Opens the shared modal in either "create" or "edit" mode and populates it
  * with the correct title, button label, placeholders, and pre-filled values.
+ * For templates and snippets the second field is labelled "Content" and given
+ * extra height; for categories it is labelled "Details".
  *
  * @param {object}  opts
  * @param {"create"|"edit"} opts.mode          - Whether this is a new item or editing an existing one.
- * @param {string}  opts.category              - Category key (e.g. "persona").
+ * @param {string}  opts.category              - Category key (e.g. "persona", "template").
  * @param {number|null} [opts.index=null]      - Index of the item to edit (edit mode only).
  * @param {string}  [opts.currentValue=""]     - Pre-fill value for the name field (edit mode).
- * @param {string}  [opts.currentDetails=""]   - Pre-fill value for the details field (edit mode).
+ * @param {string}  [opts.currentDetails=""]   - Pre-fill value for the details/content field (edit mode).
  */
 function openModal({
   mode,
@@ -341,6 +512,10 @@ function openModal({
       : `Edit ${capitalize(category)}`;
 
   modalSaveBtn.textContent = mode === "create" ? "Create" : "Save";
+
+  const isContentType = category === "template" || category === "snippet";
+  modalDetailsLabel.textContent = isContentType ? "Content" : "Details";
+  modalDetails.style.minHeight = isContentType ? "160px" : "";
 
   const placeholders = modalPlaceholders[category] || { name: "", details: "" };
   modalInput.placeholder = placeholders.name;
@@ -373,38 +548,58 @@ function closeEditModal() {
   editModal.setAttribute("aria-hidden", "true");
   modalInput.value = "";
   modalDetails.value = "";
+  modalDetails.style.minHeight = "";
   _modalMode = null;
   _editCategory = null;
   _editIndex = null;
 }
 
 /**
- * Reads the modal's name and details fields and persists the item to
- * chrome.storage.sync. In create mode a new `{name, details}` object is
- * appended to the list; in edit mode the existing entry at `_editIndex` is
- * replaced. The list is re-rendered and the modal is closed on success.
+ * Reads the modal's name and details/content fields and persists the item to
+ * chrome.storage.sync. Templates and snippets are stored under the plural keys
+ * "templates"/"snippets" with a `content` field; categories use their own key
+ * with a `details` field. The list is re-rendered and the modal closed on success.
  */
 function saveModal() {
   const name = modalInput.value.trim();
   const details = modalDetails.value.trim();
   if (!name || !_editCategory) return;
 
+  const isContentType =
+    _editCategory === "template" || _editCategory === "snippet";
+  if (isContentType && !details) return;
+  const storageKey =
+    _editCategory === "template"
+      ? "templates"
+      : _editCategory === "snippet"
+        ? "snippets"
+        : _editCategory;
+  const itemValue = isContentType
+    ? { name, content: details }
+    : { name, details };
+
+  const rerender = (list) => {
+    if (_editCategory === "template") renderTemplateList(list);
+    else if (_editCategory === "snippet") renderSnippetList(list);
+    else renderList(_editCategory, list);
+  };
+
   if (_modalMode === "create") {
-    chrome.storage.sync.get(_editCategory, (data) => {
-      const list = data[_editCategory];
-      list.push({ name, details });
-      chrome.storage.sync.set({ [_editCategory]: list }, () => {
-        renderList(_editCategory, list);
+    chrome.storage.sync.get(storageKey, (data) => {
+      const list = data[storageKey];
+      list.push(itemValue);
+      chrome.storage.sync.set({ [storageKey]: list }, () => {
+        rerender(list);
         closeEditModal();
       });
     });
   } else {
     if (_editIndex === null) return;
-    chrome.storage.sync.get(_editCategory, (data) => {
-      const list = data[_editCategory];
-      list[_editIndex] = { name, details };
-      chrome.storage.sync.set({ [_editCategory]: list }, () => {
-        renderList(_editCategory, list);
+    chrome.storage.sync.get(storageKey, (data) => {
+      const list = data[storageKey];
+      list[_editIndex] = itemValue;
+      chrome.storage.sync.set({ [storageKey]: list }, () => {
+        rerender(list);
         closeEditModal();
       });
     });
