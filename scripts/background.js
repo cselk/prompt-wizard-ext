@@ -16,34 +16,66 @@
 /** @type {Array<{name: string, content: string}>} */
 const defaultTemplates = [
   {
-    name: "Standard",
-    content: `# ROLE
-Act as a {{persona.name}}. {{persona.details}}
-Your goal is to execute the user's task with high precision, adopting the specific tone and depth associated with this persona.
+    name: "Standard Prompt",
+    content: `## Role
+{{persona.details}}
 
-# TASK
-Your primary mission is to: {{operator.name}}.
+## Task
 {{operator.details}}
 
-Please process the following input: "{{input}}"
+## Input
+{{input}}
 
-# PROVIDED CONTEXT
+## Context
 {{context}}
 
-# OPERATIONAL CONSTRAINTS & RULES
-    - STRICTURE: {{constraint}}
-    - Maintain the authoritative voice of a {{persona.name}}.
-    - Do not provide meta-commentary (e.g., do not say "Here is the summary").
-    - Focus exclusively on the output based on the provided input.
+## Constraints
+{{constraint}}
 
-# OUTPUT FORMAT
-Format: {{format.name}}
-{{format.details}}
-Ensure the structural integrity of the format request is maintained.
+## Output Format
+{{format.details}}`,
+  },
+  {
+    name: "Code Task",
+    content: `## Role
+{{persona.details}}
 
-# EXECUTION
-Begin the execution now!
-`.trim(),
+## Task
+{{operator.details}}
+
+## Code / Input
+{{input}}
+
+## Context & Environment
+{{context}}
+
+## Constraints
+{{constraint}}
+Only return code that is complete and ready to run. Include inline comments where the logic is non-obvious. If multiple approaches exist, briefly note the tradeoffs before presenting your preferred solution.
+
+## Output Format
+{{format.details}}`,
+  },
+  {
+    name: "Content Brief",
+    content: `## Role
+{{persona.details}}
+
+## Task
+{{operator.details}}
+
+## Topic / Input
+{{input}}
+
+## Background & Context
+{{context}}
+
+## Constraints & Guidelines
+{{constraint}}
+Match the tone and style to the intended audience. Avoid filler content — every sentence should add value.
+
+## Output Format
+{{format.details}}`,
   },
 ];
 
@@ -51,15 +83,28 @@ Begin the execution now!
 const defaultSnippets = [
   {
     name: "Fix Grammar",
-    content: "Please correct the grammar and flow of this: ",
-  },
-  {
-    name: "Review Code",
-    content: "Analyze this code for bugs and efficiency: ",
+    content:
+      "Please correct any grammar, spelling, and punctuation mistakes in the text below. Improve the flow where needed but preserve the original meaning and tone.",
   },
   {
     name: "Summarize",
-    content: "Summarize the following into 3 key bullet points: ",
+    content:
+      "Please summarize the following into a concise overview. Capture the key points and main takeaways. Keep it brief and easy to scan.",
+  },
+  {
+    name: "Simplify",
+    content:
+      "Please rewrite the following in plain, simple language. Aim for clarity over complexity — as if explaining to someone unfamiliar with the topic. Avoid jargon and keep sentences short.",
+  },
+  {
+    name: "Give Feedback",
+    content:
+      "Please review the following and provide honest, structured feedback. Highlight what works well, what could be improved, and any specific suggestions you have. Be direct but constructive.",
+  },
+  {
+    name: "Brainstorm",
+    content:
+      "Please brainstorm a diverse list of ideas on the following topic. Prioritize variety and creativity — don't filter too early. Present the ideas as a concise bullet list.",
   },
 ];
 
@@ -70,51 +115,53 @@ const defaultSnippets = [
 const defaults = {
   persona: [
     {
-      name: "Expert Developer",
+      name: "Senior Developer",
       details:
-        "Responds with precise, production-ready code and engineering best practices.",
+        "You are a senior software engineer with 15+ years of experience across multiple languages and paradigms. You write clean, efficient, and well-documented code. You prioritize correctness, maintainability, and performance. When reviewing or writing code, you proactively flag potential issues and suggest improvements. You communicate technical concepts clearly and concisely.",
     },
     {
-      name: "Marketing Guru",
+      name: "Professional Writer",
       details:
-        "Crafts persuasive, audience-focused copy with a strong call to action.",
+        "You are an experienced professional writer and editor with a strong command of tone, structure, and clarity. You adapt your style to the context — formal for business documents, conversational for blogs, persuasive for marketing. You avoid unnecessary jargon, prefer active voice, and always write with the reader in mind.",
     },
     {
-      name: "Socratic Tutor",
+      name: "Analytical Thinker",
       details:
-        "Guides understanding through questions rather than giving direct answers.",
+        "You are a sharp analytical thinker with a background in research and structured reasoning. You approach problems methodically, weigh evidence objectively, and present findings in a clear, logical manner. You highlight assumptions, identify gaps, and offer balanced perspectives rather than jumping to conclusions.",
     },
   ],
   operator: [
     {
-      name: "Summarize",
-      details: "Condense the input into its core points, removing all fluff.",
-    },
-    {
-      name: "Criticize",
-      details:
-        "Identify weaknesses, gaps, and areas for improvement in the input.",
-    },
-    {
       name: "Explain",
       details:
-        "Break down the input into clear, accessible language for a broad audience.",
+        "Explain the following clearly and concisely. Tailor the depth of the explanation to the complexity of the topic. Use examples where they aid understanding. Avoid unnecessary jargon unless the context calls for it.",
+    },
+    {
+      name: "Improve",
+      details:
+        "Review the following and improve it. Focus on clarity, quality, and effectiveness. Point out what was changed and why. Preserve the original intent unless there is a clear reason to deviate from it.",
+    },
+    {
+      name: "Generate",
+      details:
+        "Generate the following from scratch based on the provided input. Be creative where appropriate, but stay grounded in the context and constraints given. Aim for quality over quantity.",
     },
   ],
   format: [
     {
-      name: "Bullet Points",
-      details: "Output as a concise, scannable list of bullet points.",
+      name: "Step-by-Step",
+      details:
+        "Present your response as a numbered sequence of clear, actionable steps. Each step should be self-contained and easy to follow. Add brief explanations where a step may not be immediately obvious.",
     },
     {
-      name: "Markdown",
+      name: "Bullet Summary",
       details:
-        "Output using Markdown headings, bold, and code blocks where appropriate.",
+        "Present your response as a concise set of bullet points. Each bullet should capture one distinct idea. Prioritize clarity and brevity — avoid full paragraphs. Aim for 5–10 bullets unless the topic demands otherwise.",
     },
     {
-      name: "Table",
+      name: "Structured Report",
       details:
-        "Structure the output as a Markdown table with clear column headers.",
+        "Present your response as a structured report with clearly labelled sections. Use headings to separate distinct parts of the content. Each section should be focused and logically flow into the next. Conclude with a brief summary or recommendation where appropriate.",
     },
   ],
   templates: defaultTemplates,
