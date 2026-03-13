@@ -53,6 +53,11 @@ function importSettings(data) {
     snippets: contentSchema,
   };
 
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    alert("Import failed: no recognisable settings found in the file.");
+    return;
+  }
+
   const toSave = {};
   for (const [key, validate] of Object.entries(validators)) {
     if (!(key in data)) continue;
@@ -70,11 +75,16 @@ function importSettings(data) {
   }
 
   chrome.storage.sync.set(toSave, () => {
-    chrome.storage.sync.get([...categories, "templates", "snippets"], (saved) => {
-      categories.forEach((cat) => { if (saved[cat]) renderList(cat, saved[cat]); });
-      if (saved.templates) renderTemplateList(saved.templates);
-      if (saved.snippets) renderSnippetList(saved.snippets);
-    });
+    chrome.storage.sync.get(
+      [...categories, "templates", "snippets"],
+      (saved) => {
+        categories.forEach((cat) => {
+          if (saved[cat]) renderList(cat, saved[cat]);
+        });
+        if (saved.templates) renderTemplateList(saved.templates);
+        if (saved.snippets) renderSnippetList(saved.snippets);
+      },
+    );
   });
 }
 
@@ -273,6 +283,10 @@ function renderTemplateList(items) {
 
   container.querySelectorAll(".remove-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
+      if (items.length <= 1) {
+        return;
+      }
+
       const idx = parseInt(e.currentTarget.dataset.index);
       removeTemplate(idx);
     });
@@ -360,6 +374,10 @@ function renderSnippetList(items) {
 
   container.querySelectorAll(".remove-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
+      if (items.length <= 1) {
+        return;
+      }
+
       const idx = parseInt(e.currentTarget.dataset.index);
       removeSnippet(idx);
     });
@@ -549,6 +567,7 @@ function saveModal() {
 
   const isContentType =
     _editCategory === "template" || _editCategory === "snippet";
+  if (isContentType && !details) return;
   const storageKey =
     _editCategory === "template"
       ? "templates"
