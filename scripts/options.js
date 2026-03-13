@@ -11,6 +11,27 @@
 const categories = ["persona", "operator", "format"];
 
 /**
+ * Displays a transient toast banner in the lower-right corner.
+ * @param {string} message - Text to display.
+ * @param {"success"|"error"} [type="success"] - Visual style.
+ */
+function showToast(message, type = "success") {
+  const toast = document.createElement("div");
+  toast.className = `toast toast--${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add("toast--visible"));
+  });
+  setTimeout(() => {
+    toast.classList.remove("toast--visible");
+    toast.addEventListener("transitionend", () => toast.remove(), {
+      once: true,
+    });
+  }, 3000);
+}
+
+/**
  * Reads all settings from chrome.storage.sync and triggers a browser download
  * of the data as a formatted JSON file named `cito-settings.json`.
  */
@@ -229,7 +250,13 @@ function removeItem(category, index) {
 
     list.splice(index, 1);
     chrome.storage.sync.set({ [category]: list }, () => {
-      renderList(category, list);
+      if (chrome.runtime.lastError) {
+        showToast("Failed to delete item.", "error");
+      } else {
+        renderList(category, list);
+        const label = category.charAt(0).toUpperCase() + category.slice(1);
+        showToast(`${label} deleted.`);
+      }
     });
   });
 }
@@ -319,9 +346,14 @@ function removeTemplate(index) {
   chrome.storage.sync.get(["templates"], (data) => {
     const list = data.templates;
     list.splice(index, 1);
-    chrome.storage.sync.set({ templates: list }, () =>
-      renderTemplateList(list),
-    );
+    chrome.storage.sync.set({ templates: list }, () => {
+      if (chrome.runtime.lastError) {
+        showToast("Failed to delete template.", "error");
+      } else {
+        renderTemplateList(list);
+        showToast("Template deleted.");
+      }
+    });
   });
 }
 
@@ -410,7 +442,14 @@ function removeSnippet(index) {
   chrome.storage.sync.get(["snippets"], (data) => {
     const list = data.snippets;
     list.splice(index, 1);
-    chrome.storage.sync.set({ snippets: list }, () => renderSnippetList(list));
+    chrome.storage.sync.set({ snippets: list }, () => {
+      if (chrome.runtime.lastError) {
+        showToast("Failed to delete snippet.", "error");
+      } else {
+        renderSnippetList(list);
+        showToast("Snippet deleted.");
+      }
+    });
   });
 }
 
@@ -563,11 +602,17 @@ function closeEditModal() {
 function saveModal() {
   const name = modalInput.value.trim();
   const details = modalDetails.value.trim();
-  if (!name || !_editCategory) return;
+  if (!name || !_editCategory) {
+    showToast("Please provide a name.", "error");
+    return;
+  }
 
   const isContentType =
     _editCategory === "template" || _editCategory === "snippet";
-  if (isContentType && !details) return;
+  if (isContentType && !details) {
+    showToast("Please provide content.", "error");
+    return;
+  }
   const storageKey =
     _editCategory === "template"
       ? "templates"
@@ -578,6 +623,7 @@ function saveModal() {
     ? { name, content: details }
     : { name, details };
 
+  const label = _editCategory.charAt(0).toUpperCase() + _editCategory.slice(1);
   const rerender = (list) => {
     if (_editCategory === "template") renderTemplateList(list);
     else if (_editCategory === "snippet") renderSnippetList(list);
@@ -589,8 +635,13 @@ function saveModal() {
       const list = data[storageKey];
       list.push(itemValue);
       chrome.storage.sync.set({ [storageKey]: list }, () => {
-        rerender(list);
-        closeEditModal();
+        if (chrome.runtime.lastError) {
+          showToast(`Failed to create ${label}.`, "error");
+        } else {
+          rerender(list);
+          closeEditModal();
+          showToast(`${label} created.`);
+        }
       });
     });
   } else {
@@ -599,8 +650,13 @@ function saveModal() {
       const list = data[storageKey];
       list[_editIndex] = itemValue;
       chrome.storage.sync.set({ [storageKey]: list }, () => {
-        rerender(list);
-        closeEditModal();
+        if (chrome.runtime.lastError) {
+          showToast(`Failed to update ${label}.`, "error");
+        } else {
+          rerender(list);
+          closeEditModal();
+          showToast(`${label} updated.`);
+        }
       });
     });
   }
