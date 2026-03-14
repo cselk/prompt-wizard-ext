@@ -48,6 +48,9 @@ function createOptionEl(index, value, label, details) {
   const div = document.createElement("div");
   div.className = "custom-option" + (index === 0 ? " selected" : "");
   div.setAttribute("data-value", value);
+  div.setAttribute("tabindex", "0");
+  div.setAttribute("role", "option");
+  div.setAttribute("aria-selected", index === 0 ? "true" : "false");
   if (details !== undefined) div.setAttribute("data-details", details);
   div.textContent = label;
   return div;
@@ -128,19 +131,35 @@ function initCustomSelects() {
   });
 
   document.querySelectorAll(".select-trigger").forEach((trigger) => {
+    trigger.setAttribute("tabindex", "0");
+    trigger.setAttribute("role", "button");
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
     trigger.addEventListener("click", (e) => {
       const parent = trigger.parentElement;
       // Close others
       document.querySelectorAll(".custom-select").forEach((s) => {
-        if (s !== parent) s.classList.remove("open");
+        if (s !== parent) {
+          s.classList.remove("open");
+          s.querySelector(".select-trigger")?.setAttribute("aria-expanded", "false");
+        }
       });
-      parent.classList.toggle("open");
+      const isOpen = parent.classList.toggle("open");
+      trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
       e.stopPropagation();
+    });
+
+    trigger.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        trigger.click();
+      }
     });
   });
 
   // Option Clicks (using Event Delegation)
   document.querySelectorAll(".custom-options").forEach((menu) => {
+    menu.setAttribute("role", "listbox");
     menu.addEventListener("click", (e) => {
       const option = e.target.closest(".custom-option");
       if (!option) return;
@@ -159,8 +178,12 @@ function initCustomSelects() {
       triggerSpan.textContent = val;
       menu
         .querySelectorAll(".custom-option")
-        .forEach((opt) => opt.classList.remove("selected"));
+        .forEach((opt) => {
+          opt.classList.remove("selected");
+          opt.setAttribute("aria-selected", "false");
+        });
       option.classList.add("selected");
+      option.setAttribute("aria-selected", "true");
 
       if (cat === "templates") {
         promptData[cat] = val;
@@ -172,15 +195,29 @@ function initCustomSelects() {
       }
 
       option.closest(".custom-select").classList.remove("open");
+      option
+        .closest(".custom-select")
+        .querySelector(".select-trigger")
+        ?.setAttribute("aria-expanded", "false");
+    });
+
+    menu.addEventListener("keydown", (e) => {
+      const option = e.target.closest(".custom-option");
+      if (!option) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        option.click();
+      }
     });
   });
 }
 
 // Close on outside click
 document.addEventListener("click", () => {
-  document
-    .querySelectorAll(".custom-select")
-    .forEach((s) => s.classList.remove("open"));
+  document.querySelectorAll(".custom-select").forEach((s) => {
+    s.classList.remove("open");
+    s.querySelector(".select-trigger")?.setAttribute("aria-expanded", "false");
+  });
 });
 
 /**

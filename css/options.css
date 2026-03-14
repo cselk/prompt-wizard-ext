@@ -1,160 +1,144 @@
-:root {
-    --bg-color: #242424;
-    --text-main: #f4f4f5;
-    --text-muted: #a1a1aa;
-    --accent: #6aacea;
-    --accent-hover: #97cbfb;
-    --border: #3f3f46;
-    --input-bg: #242424;
+@import "tokens.css";
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 body {
-    font-family:
-        "Inter",
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        sans-serif;
-    background: #242424;
-    color: #f4f4f5;
-    padding: 40px;
+    margin: 0;
+    padding: var(--space-12);
+    background: var(--surface-base);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
 }
 
 .container {
-    max-width: 600px;
-    margin: auto;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
 }
 
 .page-header {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    margin-bottom: 8px;
+    gap: var(--space-6);
+    flex-wrap: wrap;
 }
 
 .page-header h1 {
     margin: 0;
+    font-size: 1.375rem;
+    font-weight: 600;
 }
 
 .header-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--space-3);
 }
 
-.export-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition:
-        border-color 150ms ease,
-        color 150ms ease;
+.hidden-file-input {
+    display: none;
 }
 
-.export-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+.sections-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+}
+
+@media (min-width: 960px) {
+    .sections-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .section {
-    background: var(--bg-color);
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
 }
 
-.section.last {
-    border-bottom: none;
-}
-
-h2 {
-    margin-top: 0;
+.section h2 {
+    margin: 0;
+    font-size: var(--text-section);
+    font-weight: 700;
     color: var(--accent);
     text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .item-list {
-    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #303030;
-    padding: 8px 12px;
-    margin-bottom: 5px;
-    border-radius: 6px;
+    gap: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-base);
+    padding: var(--space-3) var(--space-4);
 }
 
-.edit-btn {
-    background: transparent;
-    border: none;
-    margin-right: 6px;
+.item > span {
+    font-size: var(--text-sm);
+    line-height: 1.4;
+}
+
+.item > div {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    cursor: pointer;
-    text-decoration: none;
-    border-radius: 4px;
-
-    /* hidden by default, shown when parent .item is hovered */
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(2px);
-    transition:
-        opacity 150ms ease,
-        visibility 150ms ease,
-        transform 150ms ease;
-    pointer-events: none;
+    gap: var(--space-2);
 }
 
+.edit-btn,
 .remove-btn {
-    background: transparent;
-    border: none;
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #ef4444;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    background: transparent;
     cursor: pointer;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: bold;
-
-    /* hidden by default, shown when parent .item is hovered */
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transform: translateY(4px);
     transition:
-        opacity 150ms ease,
-        visibility 150ms ease,
-        transform 150ms ease;
-    pointer-events: none;
+        opacity var(--transition-fast),
+        visibility var(--transition-fast),
+        transform var(--transition-fast),
+        border-color var(--transition-fast),
+        background-color var(--transition-fast);
 }
 
-/* Show action buttons when the item is hovered */
+.edit-btn:hover {
+    border-color: var(--accent);
+    background: var(--surface-overlay);
+}
+
+.remove-btn:hover {
+    border-color: var(--status-destructive);
+    background: var(--surface-overlay);
+}
+
 .item:hover .edit-btn,
-.item:hover .remove-btn {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: translateY(2px);
-    color: var(--text-main);
-}
-
-/* size SVG icons inside action buttons */
-.edit-btn .icon,
-.remove-btn .icon {
-    width: 16px;
-    height: 16px;
-    display: block;
-}
-
-/* keyboard accessibility: reveal on focus within the item */
+.item:hover .remove-btn,
 .item:focus-within .edit-btn,
 .item:focus-within .remove-btn {
     opacity: 1;
@@ -163,58 +147,130 @@ h2 {
     transform: translateY(0);
 }
 
-input {
-    background: var(--bg-color);
+.edit-btn:focus-visible,
+.remove-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.edit-btn .icon,
+.remove-btn .icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+.export-btn,
+.modal-btn--cancel {
     border: 1px solid var(--border);
-    color: var(--text-main);
-    padding: 10px;
-    border-radius: 6px;
-    width: 85%;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-muted);
+    padding: 10px 15px;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition:
+        color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.export-btn:hover,
+.modal-btn--cancel:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.export-btn:focus-visible,
+.modal-btn--cancel:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.add-btn,
+.modal-btn--save {
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--text-primary);
+    padding: 10px 15px;
+    font-size: var(--text-base);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color var(--transition-fast),
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        opacity var(--transition-fast);
+}
+
+.add-btn {
+    align-self: flex-start;
+}
+
+.add-btn:hover,
+.modal-btn--save:hover {
+    background: var(--accent-hover);
+}
+
+.add-btn:focus-visible,
+.modal-btn--save:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.add-btn:active,
+.modal-btn--save:active {
+    transform: scale(0.98);
+}
+
+.add-btn:disabled,
+.modal-btn--save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+input,
+textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-base);
+    color: var(--text-primary);
+    padding: 10px var(--space-4);
+    font-family: inherit;
+    font-size: var(--text-sm);
+    outline: none;
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
 }
 
 textarea {
-    background: var(--bg-color);
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    padding: 10px;
-    border-radius: 6px;
-    width: 100%;
-    box-sizing: border-box;
-    min-height: 200px;
-    font-family: monospace;
+    min-height: 80px;
     resize: vertical;
-
-    scrollbar-width: none;
+    scrollbar-width: thin;
 }
 
-textarea::-webkit-scrollbar {
-    display: none;
+input:focus-visible,
+textarea:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
-button.add-btn {
-    background: var(--accent);
-    border: none;
-    color: var(--text-main);
-    padding: 10px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-/* ── Edit Modal ───────────────────────────────────────────── */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 100;
-
+    z-index: var(--z-modal);
+    background: var(--overlay-scrim);
     opacity: 0;
     visibility: hidden;
     transition:
-        opacity 150ms ease,
-        visibility 150ms ease;
+        opacity var(--transition-fast),
+        visibility var(--transition-fast);
 }
 
 .modal-overlay.is-open {
@@ -223,18 +279,18 @@ button.add-btn {
 }
 
 .modal {
-    background: #303030;
+    width: min(420px, calc(100vw - (2 * var(--space-10))));
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-    width: 100%;
-    max-width: 420px;
+    border-radius: var(--radius-xl);
+    background: var(--surface-raised);
+    padding: var(--space-10);
     display: flex;
     flex-direction: column;
-    gap: 16px;
-
+    gap: var(--space-6);
     transform: translateY(8px);
-    transition: transform 150ms ease;
+    transition:
+        transform var(--transition-fast),
+        opacity var(--transition-fast);
 }
 
 .modal-overlay.is-open .modal {
@@ -243,7 +299,8 @@ button.add-btn {
 
 .modal-title {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--text-section);
+    font-weight: 700;
     color: var(--accent);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -252,89 +309,57 @@ button.add-btn {
 .modal-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--space-2);
 }
 
 .modal-label {
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: var(--text-xs);
+    font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.modal-input {
-    width: 100%;
-    box-sizing: border-box;
+    letter-spacing: 0.05em;
 }
 
 .modal-details {
-    width: 100%;
-    box-sizing: border-box;
     min-height: 80px;
-    resize: vertical;
-    font-family: inherit;
-    font-size: 0.9rem;
+}
+
+.modal-details--template {
+    min-height: 200px;
+    font-family: var(--font-mono);
 }
 
 .modal-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
+    gap: var(--space-3);
 }
 
-.modal-btn {
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.modal-btn--cancel {
-    background: transparent;
-    color: var(--text-muted);
-}
-
-.modal-btn--cancel:hover {
-    color: var(--text-main);
-}
-
-.modal-btn--save {
-    background: var(--accent);
-    color: var(--text-main);
-}
-
-.modal-btn--save:hover {
-    background: var(--accent-hover);
-}
-
-/* Toast notification */
 .toast {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    right: var(--space-10);
+    bottom: var(--space-10);
+    z-index: var(--z-toast);
+    border-radius: var(--radius-lg);
     padding: 10px 18px;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    color: var(--text-main);
+    color: var(--text-primary);
+    font-size: var(--text-base);
     opacity: 0;
     transform: translateY(8px);
-    transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
     pointer-events: none;
-    z-index: 9999;
+    transition:
+        opacity var(--transition-base),
+        transform var(--transition-base);
 }
 
 .toast.toast--success {
-    background: #166534;
-    border: 1px solid #16a34a;
+    background: var(--status-success-bg);
+    border: 1px solid var(--status-success-border);
 }
 
 .toast.toast--error {
-    background: #7f1d1d;
-    border: 1px solid #dc2626;
+    background: var(--status-error-bg);
+    border: 1px solid var(--status-error-border);
 }
 
 .toast.toast--visible {

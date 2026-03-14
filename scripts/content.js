@@ -57,9 +57,13 @@ function initCitoBubble() {
   const bubble = document.createElement("div");
   bubble.className = "cito-floating-bubble";
   bubble.title = "Open Snippets";
+  bubble.setAttribute("role", "button");
+  bubble.setAttribute("tabindex", "0");
+  bubble.setAttribute("aria-label", "Open snippets");
 
   const menu = document.createElement("div");
   menu.id = "snippet-window";
+  menu.setAttribute("role", "menu");
   menu.style.display = "none";
 
   chrome.storage.sync.get(["snippets"], (data) => {
@@ -69,11 +73,19 @@ function initCitoBubble() {
       const item = document.createElement("div");
       item.className = "snippet-item";
       item.innerText = s.name;
+      item.setAttribute("role", "menuitem");
+      item.setAttribute("tabindex", "0");
       item.onclick = (e) => {
         e.stopPropagation();
         insertText(s.content);
         menu.style.display = "none";
       };
+      item.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          item.click();
+        }
+      });
       menu.appendChild(item);
     });
   });
@@ -86,6 +98,12 @@ function initCitoBubble() {
     const isVisible = menu.style.display === "flex";
     menu.style.display = isVisible ? "none" : "flex";
   };
+  bubble.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      bubble.click();
+    }
+  });
 
   document.addEventListener("click", (e) => {
     if (!menu.contains(e.target) && e.target !== bubble) {

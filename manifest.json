@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cito",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "Professional prompt manager with custom templates, persona presets, and a floating snippet menu for ChatGPT, Claude, and Gemini.",
   "background": {
     "service_worker": "scripts/background.js"
@@ -20,7 +20,7 @@
         "https://gemini.google.com/*"
       ],
       "js": ["scripts/content.js"],
-      "css": ["css/content.css"],
+      "css": ["css/tokens.css", "css/content.css"],
       "run_at": "document_idle"
     }
   ],

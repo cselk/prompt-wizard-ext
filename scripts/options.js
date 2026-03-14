@@ -179,8 +179,10 @@ function renderList(category, items) {
 
     const controls = document.createElement("div");
 
-    const editBtn = document.createElement("span");
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
     editBtn.className = "edit-btn";
+    editBtn.setAttribute("aria-label", `Edit ${item.name}`);
     editBtn.dataset.index = String(index);
     editBtn.dataset.category = String(category);
     editBtn.dataset.details = item.details || "";
@@ -191,8 +193,10 @@ function renderList(category, items) {
     editImg.alt = "";
     editBtn.appendChild(editImg);
 
-    const removeBtn = document.createElement("span");
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
     removeBtn.className = "remove-btn";
+    removeBtn.setAttribute("aria-label", `Delete ${item.name}`);
     removeBtn.dataset.index = String(index);
     removeBtn.dataset.category = String(category);
 
@@ -279,8 +283,10 @@ function renderTemplateList(items) {
 
     const controls = document.createElement("div");
 
-    const editBtn = document.createElement("span");
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
     editBtn.className = "edit-btn";
+    editBtn.setAttribute("aria-label", `Edit ${item.name}`);
     editBtn.dataset.index = String(index);
     editBtn.dataset.category = "template";
     editBtn.dataset.content = item.content || "";
@@ -291,8 +297,10 @@ function renderTemplateList(items) {
     editImg.alt = "";
     editBtn.appendChild(editImg);
 
-    const removeBtn = document.createElement("span");
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
     removeBtn.className = "remove-btn";
+    removeBtn.setAttribute("aria-label", `Delete ${item.name}`);
     removeBtn.dataset.index = String(index);
 
     const removeImg = document.createElement("img");
@@ -375,8 +383,10 @@ function renderSnippetList(items) {
 
     const controls = document.createElement("div");
 
-    const editBtn = document.createElement("span");
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
     editBtn.className = "edit-btn";
+    editBtn.setAttribute("aria-label", `Edit ${item.name}`);
     editBtn.dataset.index = String(index);
     editBtn.dataset.category = "snippet";
     editBtn.dataset.content = item.content || "";
@@ -387,8 +397,10 @@ function renderSnippetList(items) {
     editImg.alt = "";
     editBtn.appendChild(editImg);
 
-    const removeBtn = document.createElement("span");
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
     removeBtn.className = "remove-btn";
+    removeBtn.setAttribute("aria-label", `Delete ${item.name}`);
     removeBtn.dataset.index = String(index);
 
     const removeImg = document.createElement("img");
@@ -552,9 +564,10 @@ function openModal({
 
   modalSaveBtn.textContent = mode === "create" ? "Create" : "Save";
 
-  const isContentType = category === "template" || category === "snippet";
+  const isTemplate = category === "template";
+  const isContentType = isTemplate || category === "snippet";
   modalDetailsLabel.textContent = isContentType ? "Content" : "Details";
-  modalDetails.style.minHeight = isContentType ? "160px" : "";
+  modalDetails.classList.toggle("modal-details--template", isTemplate);
 
   const placeholders = modalPlaceholders[category] || { name: "", details: "" };
   modalInput.placeholder = placeholders.name;
@@ -587,7 +600,7 @@ function closeEditModal() {
   editModal.setAttribute("aria-hidden", "true");
   modalInput.value = "";
   modalDetails.value = "";
-  modalDetails.style.minHeight = "";
+  modalDetails.classList.remove("modal-details--template");
   _modalMode = null;
   _editCategory = null;
   _editIndex = null;
