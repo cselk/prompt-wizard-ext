@@ -41,6 +41,8 @@ function repositionCito() {
   } else if (bubble) {
     // Hide bubble if the chatbox is gone (e.g., navigating to settings)
     bubble.style.display = "none";
+    if (menu) menu.classList.remove("open");
+    bubble.setAttribute("aria-expanded", "false");
   }
 }
 
@@ -60,11 +62,21 @@ function initCitoBubble() {
   bubble.setAttribute("role", "button");
   bubble.setAttribute("tabindex", "0");
   bubble.setAttribute("aria-label", "Open snippets");
+  bubble.setAttribute("aria-expanded", "false");
 
   const menu = document.createElement("div");
   menu.id = "snippet-window";
-  menu.setAttribute("role", "menu");
-  menu.style.display = "none";
+  menu.setAttribute("role", "listbox");
+
+  const closeMenu = () => {
+    menu.classList.remove("open");
+    bubble.setAttribute("aria-expanded", "false");
+  };
+
+  const toggleMenu = () => {
+    const isOpen = menu.classList.toggle("open");
+    bubble.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  };
 
   chrome.storage.sync.get(["snippets"], (data) => {
     const snippets = data.snippets;
@@ -73,12 +85,12 @@ function initCitoBubble() {
       const item = document.createElement("div");
       item.className = "snippet-item";
       item.innerText = s.name;
-      item.setAttribute("role", "menuitem");
+      item.setAttribute("role", "option");
       item.setAttribute("tabindex", "0");
       item.onclick = (e) => {
         e.stopPropagation();
         insertText(s.content);
-        menu.style.display = "none";
+        closeMenu();
       };
       item.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -95,8 +107,7 @@ function initCitoBubble() {
 
   bubble.onclick = (e) => {
     e.stopPropagation();
-    const isVisible = menu.style.display === "flex";
-    menu.style.display = isVisible ? "none" : "flex";
+    toggleMenu();
   };
   bubble.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -107,8 +118,12 @@ function initCitoBubble() {
 
   document.addEventListener("click", (e) => {
     if (!menu.contains(e.target) && e.target !== bubble) {
-      menu.style.display = "none";
+      closeMenu();
     }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
   });
 
   repositionCito();
