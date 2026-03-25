@@ -34,6 +34,63 @@ let allTemplates = [];
 /** Content string of the currently selected template. @type {string} */
 let selectedTemplateContent = "";
 
+/** Storage key used in chrome.storage.local for AI settings. @type {string} */
+const AI_SETTINGS_LOCAL_KEY = "aiSettings";
+
+/** Storage key used in chrome.storage.sync for popup enhancement toggle. @type {string} */
+const AI_ENHANCEMENT_SYNC_KEY = "aiEnhancementEnabled";
+
+/** Tooltip shown when AI features are unavailable without an API key. @type {string} */
+const AI_ENHANCEMENT_TOOLTIP =
+  "Add your API key in Settings to enable AI features";
+
+/** Whether an API key is currently configured. @type {boolean} */
+let hasAiApiKey = false;
+
+/** Persisted user preference for AI enhancement toggle. @type {boolean} */
+let isAiEnhancementEnabled = false;
+
+/**
+ * Initializes AI enhancement toggle state from storage and wires persistence.
+ * The toggle is disabled when no API key is configured in local settings.
+ *
+ * @param {boolean} initialEnabled - Persisted toggle state from sync storage.
+ */
+function initAiEnhancementToggle(initialEnabled) {
+  const toggle = document.getElementById("aiEnhancementToggle");
+  const row = document.getElementById("aiEnhancementRow");
+  if (!toggle || !row) return;
+
+  isAiEnhancementEnabled = Boolean(initialEnabled);
+  toggle.checked = isAiEnhancementEnabled;
+
+  toggle.addEventListener("change", () => {
+    isAiEnhancementEnabled = toggle.checked;
+    chrome.storage.sync.set({
+      [AI_ENHANCEMENT_SYNC_KEY]: isAiEnhancementEnabled,
+    });
+  });
+
+  chrome.storage.local.get([AI_SETTINGS_LOCAL_KEY], (data) => {
+    const aiSettings = data[AI_SETTINGS_LOCAL_KEY] || {};
+    const apiKey =
+      typeof aiSettings.apiKey === "string" ? aiSettings.apiKey.trim() : "";
+    hasAiApiKey = Boolean(apiKey);
+
+    if (!hasAiApiKey) {
+      toggle.disabled = true;
+      toggle.checked = false;
+      row.setAttribute("title", AI_ENHANCEMENT_TOOLTIP);
+      toggle.setAttribute("title", AI_ENHANCEMENT_TOOLTIP);
+    } else {
+      toggle.disabled = false;
+      row.removeAttribute("title");
+      toggle.removeAttribute("title");
+      toggle.checked = isAiEnhancementEnabled;
+    }
+  });
+}
+
 /**
  * Creates a single `.custom-option` div element using safe DOM APIs so that
  * user-controlled strings are never parsed as HTML.
@@ -60,8 +117,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const categories = ["persona", "operator", "format"];
 
   chrome.storage.sync.get(
-    ["persona", "operator", "format", "templates"],
+    ["persona", "operator", "format", "templates", AI_ENHANCEMENT_SYNC_KEY],
     (data) => {
+      initAiEnhancementToggle(data[AI_ENHANCEMENT_SYNC_KEY]);
+
       categories.forEach((cat) => {
         const list = data[cat] || [];
         const container = document.querySelector(
@@ -270,6 +329,10 @@ document.getElementById("generateBtn").addEventListener("click", () => {
   Object.entries(scalarInput).forEach(([key, val]) => {
     templateText = templateText.replace(new RegExp(`{{${key}}}`, "g"), val);
   });
+
+  if (hasAiApiKey && isAiEnhancementEnabled) {
+    console.log("AI Enhancements enabled!");
+  }
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs[0]) return;

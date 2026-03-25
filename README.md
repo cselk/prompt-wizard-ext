@@ -30,7 +30,8 @@ The popup combines five selectable building blocks with three free-text fields t
 - **Context** *(optional)* — background information for the AI
 - **Constraint** *(optional)* — limits or rules to follow
 
-Click **Craft Prompt** and Cito substitutes every token and injects the result directly into the chat input field.
+Click **Craft Prompt** and Cito substitutes every token and injects the result directly into the chat input field.  
+Use the **AI Enhancement** toggle in the popup to optionally run an AI-improvement step before injection (currently a placeholder integration path).
 
 #### Template token syntax
 
@@ -50,7 +51,7 @@ A small **Cito bubble** is injected next to the send button on every supported p
 ### Settings Page
 Manage all your reusable content from one place (`chrome://extensions` → Cito → *Options*, or right-click the toolbar icon):
 
-- **AI Settings** — save your **OpenAI API key** with a masked show/hide input. The key is stored in `chrome.storage.local` only (device-local, never synced), persists across settings reloads, and saving again updates the stored key.
+- **AI Settings** — save your **OpenAI API key** with a masked show/hide input. The key is stored in `chrome.storage.local` only (device-local, never synced), persists across settings reloads, and saving again updates the stored key. The popup **AI Enhancement** toggle is disabled until a key is present.
 - **CRUD for Personas, Operators, and Formats** — create, rename, and delete items; each has a *Name* and a *Details* (instruction) field
 - **Template Library** — write templates with `{{token}}` placeholders; both *Name* and *Content* fields are required
 - **Snippet Library** — short reusable fragments; both *Name* and *Content* fields are required
