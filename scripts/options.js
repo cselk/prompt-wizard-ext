@@ -9,6 +9,19 @@
 
 /** Category keys that use the shared `{name, details}` item schema. @type {string[]} */
 const categories = ["persona", "operator", "format"];
+const AI_SETTINGS_LOCAL_KEY = "aiSettings";
+
+/**
+ * Basic client-side OpenAI API key validation.
+ * Allows empty value for explicit key removal.
+ *
+ * @param {string} apiKey
+ * @returns {boolean}
+ */
+function isValidApiKey(apiKey) {
+  if (!apiKey) return true;
+  return apiKey.startsWith("sk-");
+}
 
 /**
  * Displays a transient toast banner in the lower-right corner.
@@ -110,6 +123,61 @@ function importSettings(data) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const aiApiKeyInput = document.getElementById("ai-api-key");
+  const aiKeyToggleBtn = document.getElementById("ai-key-toggle-btn");
+  const saveAiSettingsBtn = document.getElementById("save-ai-settings-btn");
+  let isApiKeyVisible = false;
+
+  /**
+   * Applies show/hide state to the API key field and toggle label.
+   *
+   * @param {boolean} visible
+   */
+  function setApiKeyVisibility(visible) {
+    isApiKeyVisible = visible;
+    aiApiKeyInput.type = visible ? "text" : "password";
+    aiKeyToggleBtn.textContent = visible ? "Hide" : "Show";
+    aiKeyToggleBtn.setAttribute("aria-pressed", visible ? "true" : "false");
+  }
+
+  chrome.storage.local.get([AI_SETTINGS_LOCAL_KEY], (data) => {
+    if (chrome.runtime.lastError) {
+      showToast("Failed to load AI settings.", "error");
+      return;
+    }
+    const stored = data[AI_SETTINGS_LOCAL_KEY] || {};
+    const apiKey = typeof stored.apiKey === "string" ? stored.apiKey : "";
+    aiApiKeyInput.value = apiKey;
+    setApiKeyVisibility(false);
+  });
+
+  aiKeyToggleBtn.addEventListener("click", () => {
+    setApiKeyVisibility(!isApiKeyVisible);
+  });
+
+  saveAiSettingsBtn.addEventListener("click", () => {
+    const apiKey = aiApiKeyInput.value.trim();
+
+    if (!isValidApiKey(apiKey)) {
+      showToast("Invalid OpenAI key. It should start with sk-", "error");
+      return;
+    }
+
+    const aiSettings = apiKey ? { apiKey } : {};
+    chrome.storage.local.set({ [AI_SETTINGS_LOCAL_KEY]: aiSettings }, () => {
+      if (chrome.runtime.lastError) {
+        showToast("Failed to save AI settings.", "error");
+        return;
+      }
+      if (!apiKey) {
+        showToast("API key removed.");
+      } else {
+        showToast("OpenAI API key saved.");
+      }
+      setApiKeyVisibility(false);
+    });
+  });
+
   chrome.storage.sync.get([...categories, "templates", "snippets"], (data) => {
     categories.forEach((cat) => {
       const list = data[cat];

@@ -34,6 +34,42 @@
                 </div>
             </div>
 
+            <div class="section ai-settings-section">
+                <h2>AI Settings</h2>
+                <div class="ai-settings-fields">
+                    <div class="ai-field">
+                        <label class="ai-field-label" for="ai-api-key"
+                            >OpenAI API Key</label
+                        >
+                        <div class="ai-key-input-row">
+                            <input
+                                type="password"
+                                id="ai-api-key"
+                                placeholder="sk-..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                            <button
+                                id="ai-key-toggle-btn"
+                                class="export-btn"
+                                type="button"
+                                aria-pressed="false"
+                            >
+                                Show
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <p class="ai-info-block">
+                    Your API key is stored locally on your device and is never
+                    sent to Cito servers. Prompts are sent directly from your
+                    browser to the OpenAI API.
+                </p>
+                <button id="save-ai-settings-btn" class="add-btn" type="button">
+                    Save AI Settings
+                </button>
+            </div>
+
             <div class="sections-grid">
                 <div class="section">
                     <h2>Personas</h2>

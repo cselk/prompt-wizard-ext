@@ -50,6 +50,7 @@ A small **Cito bubble** is injected next to the send button on every supported p
 ### Settings Page
 Manage all your reusable content from one place (`chrome://extensions` → Cito → *Options*, or right-click the toolbar icon):
 
+- **AI Settings** — save your **OpenAI API key** with a masked show/hide input. The key is stored in `chrome.storage.local` only (device-local, never synced), persists across settings reloads, and saving again updates the stored key.
 - **CRUD for Personas, Operators, and Formats** — create, rename, and delete items; each has a *Name* and a *Details* (instruction) field
 - **Template Library** — write templates with `{{token}}` placeholders; both *Name* and *Content* fields are required
 - **Snippet Library** — short reusable fragments; both *Name* and *Content* fields are required
