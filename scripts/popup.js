@@ -212,6 +212,33 @@ function setCraftButtonLoadingState(isLoading) {
     : generateBtn.dataset.defaultLabel;
 }
 
+let insertedFlashTimer = null;
+
+/**
+ * Briefly flashes "Inserted!" on the Craft Prompt button, then restores label.
+ */
+function flashCraftButtonInserted() {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel = generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Inserted!";
+
+  if (insertedFlashTimer) {
+    clearTimeout(insertedFlashTimer);
+  }
+
+  insertedFlashTimer = setTimeout(() => {
+    generateBtn.textContent = generateBtn.dataset.defaultLabel;
+    generateBtn.disabled = false;
+    insertedFlashTimer = null;
+  }, 700);
+}
+
 /**
  * Initializes AI enhancement toggle state from storage and wires persistence.
  * The toggle is disabled when no API key is configured in local settings.
@@ -517,14 +544,14 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
     setCraftButtonLoadingState(true);
   }
 
-  try {
-    if (shouldEnhance) {
+  if (shouldEnhance) {
+    try {
       promptToInject = await enhancePromptWithAi(templateText);
-    }
-    injectPromptIntoActiveTab(promptToInject);
-  } finally {
-    if (shouldEnhance) {
+    } finally {
       setCraftButtonLoadingState(false);
     }
   }
+
+  injectPromptIntoActiveTab(promptToInject);
+  flashCraftButtonInserted();
 });
