@@ -103,10 +103,10 @@ function extractEnhancedPrompt(responseData) {
 
 /**
  * Requests prompt enhancement from the configured OpenAI-compatible provider.
- * Returns the original prompt on failure to preserve existing behavior.
+ * Returns success flag and enhanced prompt text.
  *
  * @param {string} assembledPrompt
- * @returns {Promise<string>}
+ * @returns {Promise<{ok: boolean, promptText: string}>}
  */
 async function enhancePromptWithAi(assembledPrompt) {
   const endpoint = `${normalizeBaseUrl(aiSettings.baseUrl)}/chat/completions`;
@@ -137,23 +137,20 @@ async function enhancePromptWithAi(assembledPrompt) {
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("AI enhancement request failed:", response.status, errorBody);
-      alert("AI enhancement failed. Injecting original prompt instead.");
-      return assembledPrompt;
+      return { ok: false, promptText: "" };
     }
 
     const responseData = await response.json();
     const improvedPrompt = extractEnhancedPrompt(responseData);
     if (!improvedPrompt) {
       console.error("AI enhancement response did not include prompt text.");
-      alert("AI enhancement returned an invalid response. Using original prompt.");
-      return assembledPrompt;
+      return { ok: false, promptText: "" };
     }
 
-    return improvedPrompt;
+    return { ok: true, promptText: improvedPrompt };
   } catch (error) {
     console.error("AI enhancement request error:", error);
-    alert("Could not reach AI provider. Injecting original prompt instead.");
-    return assembledPrompt;
+    return { ok: false, promptText: "" };
   }
 }
 
@@ -237,6 +234,31 @@ function flashCraftButtonInserted() {
     generateBtn.disabled = false;
     insertedFlashTimer = null;
   }, 700);
+}
+
+/**
+ * Briefly flashes "API Call failed!" on the Craft Prompt button, then restores.
+ */
+function flashCraftButtonApiFailed() {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel = generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "API Call failed!";
+
+  if (insertedFlashTimer) {
+    clearTimeout(insertedFlashTimer);
+  }
+
+  insertedFlashTimer = setTimeout(() => {
+    generateBtn.textContent = generateBtn.dataset.defaultLabel;
+    generateBtn.disabled = false;
+    insertedFlashTimer = null;
+  }, 900);
 }
 
 /**
@@ -539,6 +561,7 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
 
   let promptToInject = templateText;
   const shouldEnhance = hasAiApiKey && isAiEnhancementEnabled;
+  let enhancementFailed = false;
 
   if (shouldEnhance) {
     setCraftButtonLoadingState(true);
@@ -546,10 +569,20 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
 
   if (shouldEnhance) {
     try {
-      promptToInject = await enhancePromptWithAi(templateText);
+      const enhancementResult = await enhancePromptWithAi(templateText);
+      if (enhancementResult.ok) {
+        promptToInject = enhancementResult.promptText;
+      } else {
+        enhancementFailed = true;
+      }
     } finally {
       setCraftButtonLoadingState(false);
     }
+  }
+
+  if (enhancementFailed) {
+    flashCraftButtonApiFailed();
+    return;
   }
 
   injectPromptIntoActiveTab(promptToInject);

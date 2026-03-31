@@ -32,6 +32,7 @@ The popup combines five selectable building blocks with three free-text fields t
 
 Click **Craft Prompt** and Cito substitutes every token and injects the result directly into the chat input field.  
 When **AI Enhancement** is enabled, Cito first sends the assembled prompt to your configured OpenAI-compatible provider (`/chat/completions`) and injects the improved result.
+If the enhancement API call fails, Cito shows `API Call failed!` on the button and does not inject any prompt.
 
 #### Template token syntax
 
