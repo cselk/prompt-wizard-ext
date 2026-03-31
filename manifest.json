@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Cito",
-  "version": "1.8.0",
+  "version": "1.8.4",
   "description": "Professional prompt manager with custom templates, persona presets, and a floating snippet menu for ChatGPT, Claude, and Gemini.",
   "background": {
     "service_worker": "scripts/background.js"
   },
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": ["activeTab", "scripting", "storage", "permissions"],
+  "optional_host_permissions": ["https://*/*"],
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",

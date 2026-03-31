@@ -34,6 +34,416 @@ let allTemplates = [];
 /** Content string of the currently selected template. @type {string} */
 let selectedTemplateContent = "";
 
+/** Storage key used in chrome.storage.local for AI settings. @type {string} */
+const AI_SETTINGS_LOCAL_KEY = "aiSettings";
+
+/** Storage key used in chrome.storage.sync for popup enhancement toggle. @type {string} */
+const AI_ENHANCEMENT_SYNC_KEY = "aiEnhancementEnabled";
+
+/** Default OpenAI-compatible provider base URL used when none is configured. @type {string} */
+const DEFAULT_AI_BASE_URL = "https://api.openai.com/v1";
+
+/** Default model used for enhancement requests when none is configured. @type {string} */
+const DEFAULT_AI_MODEL = "gpt-4o-mini";
+
+/** Tooltip shown when AI features are unavailable without an API key. @type {string} */
+const AI_ENHANCEMENT_TOOLTIP =
+  "Add your API key in Settings to enable AI features";
+
+/** Whether an API key is currently configured. @type {boolean} */
+let hasAiApiKey = false;
+
+/** Persisted user preference for AI enhancement toggle. @type {boolean} */
+let isAiEnhancementEnabled = false;
+
+/** AI provider settings loaded from local storage. */
+let aiSettings = {
+  apiKey: "",
+  baseUrl: DEFAULT_AI_BASE_URL,
+  model: DEFAULT_AI_MODEL,
+};
+
+/** System guidance used for prompt-enhancement requests. @type {string} */
+const PROMPT_ENHANCEMENT_SYSTEM_PROMPT =
+  "You are a prompt optimization assistant. Preserve the original intent and overall structure of the prompt. Improve only phrasing, specificity, and instruction quality. Do not rewrite it into a different format, do not remove constraints, and do not change the requested outcome. Return only the improved prompt text.";
+
+/**
+ * Normalizes base URL by trimming whitespace and trailing slashes.
+ *
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function normalizeBaseUrl(baseUrl) {
+  return (baseUrl || "").trim().replace(/\/+$/, "");
+}
+
+/**
+ * Returns origin wildcard pattern used by chrome.permissions host access.
+ *
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function getProviderPermissionPattern(baseUrl) {
+  try {
+    const origin = new URL(normalizeBaseUrl(baseUrl)).origin;
+    return `${origin}/*`;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Ensures runtime host permission exists for the configured provider origin.
+ *
+ * @param {string} baseUrl
+ * @returns {Promise<boolean>}
+ */
+function ensureProviderPermission(baseUrl) {
+  const pattern = getProviderPermissionPattern(baseUrl);
+  if (!pattern) {
+    console.error("Invalid provider URL for permissions:", baseUrl);
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    chrome.permissions.contains({ origins: [pattern] }, (alreadyGranted) => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          "Failed checking provider permission:",
+          chrome.runtime.lastError,
+        );
+        resolve(false);
+        return;
+      }
+
+      if (alreadyGranted) {
+        resolve(true);
+        return;
+      }
+
+      chrome.permissions.request({ origins: [pattern] }, (granted) => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            "Failed requesting provider permission:",
+            chrome.runtime.lastError,
+          );
+          resolve(false);
+          return;
+        }
+        resolve(Boolean(granted));
+      });
+    });
+  });
+}
+
+/**
+ * Reads message text from OpenAI-compatible chat completion responses.
+ *
+ * @param {any} responseData
+ * @returns {string}
+ */
+function extractEnhancedPrompt(responseData) {
+  const message = responseData?.choices?.[0]?.message;
+  if (!message) return "";
+
+  if (typeof message.content === "string") {
+    return message.content.trim();
+  }
+
+  if (Array.isArray(message.content)) {
+    return message.content
+      .map((part) => (typeof part?.text === "string" ? part.text : ""))
+      .join("")
+      .trim();
+  }
+
+  return "";
+}
+
+/**
+ * Requests prompt enhancement from the configured OpenAI-compatible provider.
+ * Returns success flag and enhanced prompt text.
+ *
+ * @param {string} assembledPrompt
+ * @returns {Promise<{ok: boolean, promptText: string}>}
+ */
+async function enhancePromptWithAi(assembledPrompt) {
+  const endpoint = `${normalizeBaseUrl(aiSettings.baseUrl)}/chat/completions`;
+  const hasPermission = await ensureProviderPermission(aiSettings.baseUrl);
+  if (!hasPermission) {
+    console.error("Provider origin permission not granted.");
+    return { ok: false, promptText: "" };
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${aiSettings.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: aiSettings.model,
+        temperature: 0.2,
+        messages: [
+          {
+            role: "system",
+            content: PROMPT_ENHANCEMENT_SYSTEM_PROMPT,
+          },
+          {
+            role: "user",
+            content: assembledPrompt,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(
+        "AI enhancement request failed:",
+        response.status,
+        errorBody,
+      );
+      return { ok: false, promptText: "" };
+    }
+
+    const responseData = await response.json();
+    const improvedPrompt = extractEnhancedPrompt(responseData);
+    if (!improvedPrompt) {
+      console.error("AI enhancement response did not include prompt text.");
+      return { ok: false, promptText: "" };
+    }
+
+    return { ok: true, promptText: improvedPrompt };
+  } catch (error) {
+    console.error("AI enhancement request error:", error);
+    return { ok: false, promptText: "" };
+  }
+}
+
+/**
+ * Injects text into the active tab's detected chat input field.
+ *
+ * @param {string} textToInject
+ * @returns {Promise<boolean>}
+ */
+function injectPromptIntoActiveTab(textToInject) {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (chrome.runtime.lastError) {
+        console.error("Failed to query active tab:", chrome.runtime.lastError);
+        resolve(false);
+        return;
+      }
+
+      if (!tabs[0]?.id) {
+        console.error("No active tab available for prompt injection.");
+        resolve(false);
+        return;
+      }
+
+      chrome.scripting.executeScript(
+        {
+          target: { tabId: tabs[0].id },
+          func: (injectedText) => {
+            const selectors = [
+              "#prompt-textarea",
+              ".ProseMirror",
+              '[contenteditable="true"]',
+              "textarea",
+            ];
+            let inputField = null;
+            for (const s of selectors) {
+              inputField = document.querySelector(s);
+              if (inputField) break;
+            }
+
+            if (!inputField) {
+              return false;
+            }
+
+            inputField.focus();
+            document.execCommand("insertText", false, injectedText);
+            return true;
+          },
+          args: [textToInject],
+        },
+        (results) => {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "Failed to execute prompt injection script:",
+              chrome.runtime.lastError,
+            );
+            resolve(false);
+            return;
+          }
+
+          resolve(Boolean(results?.[0]?.result));
+        },
+      );
+    });
+  });
+}
+
+/**
+ * Updates Craft Prompt button state for async enhancement progress.
+ *
+ * @param {boolean} isLoading
+ */
+function setCraftButtonLoadingState(isLoading) {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = isLoading;
+  generateBtn.textContent = isLoading
+    ? "Enhancing prompt..."
+    : generateBtn.dataset.defaultLabel;
+}
+
+let insertedFlashTimer = null;
+
+/**
+ * Briefly flashes "Inserted!" on the Craft Prompt button, then restores label.
+ */
+function flashCraftButtonInserted() {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Inserted!";
+
+  if (insertedFlashTimer) {
+    clearTimeout(insertedFlashTimer);
+  }
+
+  insertedFlashTimer = setTimeout(() => {
+    generateBtn.textContent = generateBtn.dataset.defaultLabel;
+    generateBtn.disabled = false;
+    insertedFlashTimer = null;
+  }, 700);
+}
+
+/**
+ * Briefly flashes "API Call failed!" on the Craft Prompt button, then restores.
+ */
+function flashCraftButtonApiFailed() {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "API Call failed!";
+
+  if (insertedFlashTimer) {
+    clearTimeout(insertedFlashTimer);
+  }
+
+  insertedFlashTimer = setTimeout(() => {
+    generateBtn.textContent = generateBtn.dataset.defaultLabel;
+    generateBtn.disabled = false;
+    insertedFlashTimer = null;
+  }, 900);
+}
+
+/**
+ * Briefly flashes "No Input Found" on the Craft Prompt button, then restores.
+ */
+function flashCraftButtonNoInputFound() {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "No Input Found!";
+
+  if (insertedFlashTimer) {
+    clearTimeout(insertedFlashTimer);
+  }
+
+  insertedFlashTimer = setTimeout(() => {
+    generateBtn.textContent = generateBtn.dataset.defaultLabel;
+    generateBtn.disabled = false;
+    insertedFlashTimer = null;
+  }, 900);
+}
+
+/**
+ * Initializes AI enhancement toggle state from storage and wires persistence.
+ * The toggle is disabled when no API key is configured in local settings.
+ *
+ * @param {boolean} initialEnabled - Persisted toggle state from sync storage.
+ */
+function initAiEnhancementToggle(initialEnabled) {
+  const toggle = document.getElementById("aiEnhancementToggle");
+  const row = document.getElementById("aiEnhancementRow");
+  if (!toggle || !row) return;
+
+  isAiEnhancementEnabled = Boolean(initialEnabled);
+  toggle.checked = isAiEnhancementEnabled;
+
+  toggle.addEventListener("change", () => {
+    isAiEnhancementEnabled = toggle.checked;
+    chrome.storage.sync.set({
+      [AI_ENHANCEMENT_SYNC_KEY]: isAiEnhancementEnabled,
+    });
+  });
+
+  chrome.storage.local.get([AI_SETTINGS_LOCAL_KEY], (data) => {
+    const storedAiSettings = data[AI_SETTINGS_LOCAL_KEY] || {};
+    const apiKey =
+      typeof storedAiSettings.apiKey === "string"
+        ? storedAiSettings.apiKey.trim()
+        : "";
+    const baseUrl =
+      typeof storedAiSettings.baseUrl === "string" &&
+      storedAiSettings.baseUrl.trim()
+        ? normalizeBaseUrl(storedAiSettings.baseUrl)
+        : DEFAULT_AI_BASE_URL;
+    const model =
+      typeof storedAiSettings.model === "string" &&
+      storedAiSettings.model.trim()
+        ? storedAiSettings.model.trim()
+        : DEFAULT_AI_MODEL;
+
+    // Keep provider settings cached for the enhancement request.
+    // API key remains optional for settings persistence, but required for toggle enablement.
+    aiSettings = { apiKey, baseUrl, model };
+
+    hasAiApiKey = Boolean(apiKey);
+
+    if (!hasAiApiKey) {
+      toggle.disabled = true;
+      toggle.checked = false;
+      row.setAttribute("title", AI_ENHANCEMENT_TOOLTIP);
+      toggle.setAttribute("title", AI_ENHANCEMENT_TOOLTIP);
+    } else {
+      toggle.disabled = false;
+      row.removeAttribute("title");
+      toggle.removeAttribute("title");
+      toggle.checked = isAiEnhancementEnabled;
+    }
+  });
+}
+
 /**
  * Creates a single `.custom-option` div element using safe DOM APIs so that
  * user-controlled strings are never parsed as HTML.
@@ -60,8 +470,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const categories = ["persona", "operator", "format"];
 
   chrome.storage.sync.get(
-    ["persona", "operator", "format", "templates"],
+    ["persona", "operator", "format", "templates", AI_ENHANCEMENT_SYNC_KEY],
     (data) => {
+      initAiEnhancementToggle(data[AI_ENHANCEMENT_SYNC_KEY]);
+
       categories.forEach((cat) => {
         const list = data[cat] || [];
         const container = document.querySelector(
@@ -141,7 +553,10 @@ function initCustomSelects() {
       document.querySelectorAll(".custom-select").forEach((s) => {
         if (s !== parent) {
           s.classList.remove("open");
-          s.querySelector(".select-trigger")?.setAttribute("aria-expanded", "false");
+          s.querySelector(".select-trigger")?.setAttribute(
+            "aria-expanded",
+            "false",
+          );
         }
       });
       const isOpen = parent.classList.toggle("open");
@@ -176,12 +591,10 @@ function initCustomSelects() {
       }
 
       triggerSpan.textContent = val;
-      menu
-        .querySelectorAll(".custom-option")
-        .forEach((opt) => {
-          opt.classList.remove("selected");
-          opt.setAttribute("aria-selected", "false");
-        });
+      menu.querySelectorAll(".custom-option").forEach((opt) => {
+        opt.classList.remove("selected");
+        opt.setAttribute("aria-selected", "false");
+      });
       option.classList.add("selected");
       option.setAttribute("aria-selected", "true");
 
@@ -230,9 +643,11 @@ document.addEventListener("click", () => {
  *
  * The resulting string is injected into the active tab's chat input via
  * `chrome.scripting.executeScript`, using `execCommand("insertText")` so that
- * the host page's input event listeners fire correctly.
+ * the host page's input event listeners fire correctly. If AI enhancement is
+ * enabled, the assembled prompt is first sent to the configured provider and
+ * the improved version is injected.
  */
-document.getElementById("generateBtn").addEventListener("click", () => {
+document.getElementById("generateBtn").addEventListener("click", async () => {
   const persona = promptData.persona || { name: "Expert", details: "" };
   const operator = promptData.operator || { name: "Assist", details: "" };
   const format = promptData.format || { name: "Plain Text", details: "" };
@@ -271,32 +686,36 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     templateText = templateText.replace(new RegExp(`{{${key}}}`, "g"), val);
   });
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs[0]) return;
+  let promptToInject = templateText;
+  const shouldEnhance = hasAiApiKey && isAiEnhancementEnabled;
+  let enhancementFailed = false;
 
-    chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: (textToInject) => {
-        const selectors = [
-          "#prompt-textarea",
-          ".ProseMirror",
-          '[contenteditable="true"]',
-          "textarea",
-        ];
-        let inputField = null;
-        for (const s of selectors) {
-          inputField = document.querySelector(s);
-          if (inputField) break;
-        }
+  if (shouldEnhance) {
+    setCraftButtonLoadingState(true);
+  }
 
-        if (inputField) {
-          inputField.focus();
-          document.execCommand("insertText", false, textToInject);
-        } else {
-          alert("Could not find an AI input field on this page.");
-        }
-      },
-      args: [templateText],
-    });
-  });
+  if (shouldEnhance) {
+    try {
+      const enhancementResult = await enhancePromptWithAi(templateText);
+      if (enhancementResult.ok) {
+        promptToInject = enhancementResult.promptText;
+      } else {
+        enhancementFailed = true;
+      }
+    } finally {
+      setCraftButtonLoadingState(false);
+    }
+  }
+
+  if (enhancementFailed) {
+    flashCraftButtonApiFailed();
+    return;
+  }
+
+  const didInsert = await injectPromptIntoActiveTab(promptToInject);
+  if (didInsert) {
+    flashCraftButtonInserted();
+  } else {
+    flashCraftButtonNoInputFound();
+  }
 });
