@@ -194,6 +194,25 @@ function injectPromptIntoActiveTab(textToInject) {
 }
 
 /**
+ * Updates Craft Prompt button state for async enhancement progress.
+ *
+ * @param {boolean} isLoading
+ */
+function setCraftButtonLoadingState(isLoading) {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel = generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = isLoading;
+  generateBtn.textContent = isLoading
+    ? "Enhancing prompt..."
+    : generateBtn.dataset.defaultLabel;
+}
+
+/**
  * Initializes AI enhancement toggle state from storage and wires persistence.
  * The toggle is disabled when no API key is configured in local settings.
  *
@@ -492,9 +511,20 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
   });
 
   let promptToInject = templateText;
-  if (hasAiApiKey && isAiEnhancementEnabled) {
-    promptToInject = await enhancePromptWithAi(templateText);
+  const shouldEnhance = hasAiApiKey && isAiEnhancementEnabled;
+
+  if (shouldEnhance) {
+    setCraftButtonLoadingState(true);
   }
 
-  injectPromptIntoActiveTab(promptToInject);
+  try {
+    if (shouldEnhance) {
+      promptToInject = await enhancePromptWithAi(templateText);
+    }
+    injectPromptIntoActiveTab(promptToInject);
+  } finally {
+    if (shouldEnhance) {
+      setCraftButtonLoadingState(false);
+    }
+  }
 });
