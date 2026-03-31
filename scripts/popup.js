@@ -200,7 +200,11 @@ async function enhancePromptWithAi(assembledPrompt) {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error("AI enhancement request failed:", response.status, errorBody);
+      console.error(
+        "AI enhancement request failed:",
+        response.status,
+        errorBody,
+      );
       return { ok: false, promptText: "" };
     }
 
@@ -222,34 +226,62 @@ async function enhancePromptWithAi(assembledPrompt) {
  * Injects text into the active tab's detected chat input field.
  *
  * @param {string} textToInject
+ * @returns {Promise<boolean>}
  */
 function injectPromptIntoActiveTab(textToInject) {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs[0]) return;
+  return new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (chrome.runtime.lastError) {
+        console.error("Failed to query active tab:", chrome.runtime.lastError);
+        resolve(false);
+        return;
+      }
 
-    chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: (injectedText) => {
-        const selectors = [
-          "#prompt-textarea",
-          ".ProseMirror",
-          '[contenteditable="true"]',
-          "textarea",
-        ];
-        let inputField = null;
-        for (const s of selectors) {
-          inputField = document.querySelector(s);
-          if (inputField) break;
-        }
+      if (!tabs[0]?.id) {
+        console.error("No active tab available for prompt injection.");
+        resolve(false);
+        return;
+      }
 
-        if (inputField) {
-          inputField.focus();
-          document.execCommand("insertText", false, injectedText);
-        } else {
-          alert("Could not find an AI input field on this page.");
-        }
-      },
-      args: [textToInject],
+      chrome.scripting.executeScript(
+        {
+          target: { tabId: tabs[0].id },
+          func: (injectedText) => {
+            const selectors = [
+              "#prompt-textarea",
+              ".ProseMirror",
+              '[contenteditable="true"]',
+              "textarea",
+            ];
+            let inputField = null;
+            for (const s of selectors) {
+              inputField = document.querySelector(s);
+              if (inputField) break;
+            }
+
+            if (!inputField) {
+              return false;
+            }
+
+            inputField.focus();
+            document.execCommand("insertText", false, injectedText);
+            return true;
+          },
+          args: [textToInject],
+        },
+        (results) => {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "Failed to execute prompt injection script:",
+              chrome.runtime.lastError,
+            );
+            resolve(false);
+            return;
+          }
+
+          resolve(Boolean(results?.[0]?.result));
+        },
+      );
     });
   });
 }
@@ -264,7 +296,8 @@ function setCraftButtonLoadingState(isLoading) {
   if (!generateBtn) return;
 
   if (!generateBtn.dataset.defaultLabel) {
-    generateBtn.dataset.defaultLabel = generateBtn.textContent || "Craft Prompt";
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
   }
 
   generateBtn.disabled = isLoading;
@@ -283,7 +316,8 @@ function flashCraftButtonInserted() {
   if (!generateBtn) return;
 
   if (!generateBtn.dataset.defaultLabel) {
-    generateBtn.dataset.defaultLabel = generateBtn.textContent || "Craft Prompt";
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
   }
 
   generateBtn.disabled = true;
@@ -308,11 +342,38 @@ function flashCraftButtonApiFailed() {
   if (!generateBtn) return;
 
   if (!generateBtn.dataset.defaultLabel) {
-    generateBtn.dataset.defaultLabel = generateBtn.textContent || "Craft Prompt";
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
   }
 
   generateBtn.disabled = true;
   generateBtn.textContent = "API Call failed!";
+
+  if (insertedFlashTimer) {
+    clearTimeout(insertedFlashTimer);
+  }
+
+  insertedFlashTimer = setTimeout(() => {
+    generateBtn.textContent = generateBtn.dataset.defaultLabel;
+    generateBtn.disabled = false;
+    insertedFlashTimer = null;
+  }, 900);
+}
+
+/**
+ * Briefly flashes "No Input Found" on the Craft Prompt button, then restores.
+ */
+function flashCraftButtonNoInputFound() {
+  const generateBtn = document.getElementById("generateBtn");
+  if (!generateBtn) return;
+
+  if (!generateBtn.dataset.defaultLabel) {
+    generateBtn.dataset.defaultLabel =
+      generateBtn.textContent || "Craft Prompt";
+  }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "No Input Found!";
 
   if (insertedFlashTimer) {
     clearTimeout(insertedFlashTimer);
@@ -358,7 +419,8 @@ function initAiEnhancementToggle(initialEnabled) {
         ? normalizeBaseUrl(storedAiSettings.baseUrl)
         : DEFAULT_AI_BASE_URL;
     const model =
-      typeof storedAiSettings.model === "string" && storedAiSettings.model.trim()
+      typeof storedAiSettings.model === "string" &&
+      storedAiSettings.model.trim()
         ? storedAiSettings.model.trim()
         : DEFAULT_AI_MODEL;
 
@@ -491,7 +553,10 @@ function initCustomSelects() {
       document.querySelectorAll(".custom-select").forEach((s) => {
         if (s !== parent) {
           s.classList.remove("open");
-          s.querySelector(".select-trigger")?.setAttribute("aria-expanded", "false");
+          s.querySelector(".select-trigger")?.setAttribute(
+            "aria-expanded",
+            "false",
+          );
         }
       });
       const isOpen = parent.classList.toggle("open");
@@ -526,12 +591,10 @@ function initCustomSelects() {
       }
 
       triggerSpan.textContent = val;
-      menu
-        .querySelectorAll(".custom-option")
-        .forEach((opt) => {
-          opt.classList.remove("selected");
-          opt.setAttribute("aria-selected", "false");
-        });
+      menu.querySelectorAll(".custom-option").forEach((opt) => {
+        opt.classList.remove("selected");
+        opt.setAttribute("aria-selected", "false");
+      });
       option.classList.add("selected");
       option.setAttribute("aria-selected", "true");
 
@@ -649,6 +712,10 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
     return;
   }
 
-  injectPromptIntoActiveTab(promptToInject);
-  flashCraftButtonInserted();
+  const didInsert = await injectPromptIntoActiveTab(promptToInject);
+  if (didInsert) {
+    flashCraftButtonInserted();
+  } else {
+    flashCraftButtonNoInputFound();
+  }
 });
