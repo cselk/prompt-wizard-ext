@@ -78,6 +78,65 @@ function normalizeBaseUrl(baseUrl) {
 }
 
 /**
+ * Returns origin wildcard pattern used by chrome.permissions host access.
+ *
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function getProviderPermissionPattern(baseUrl) {
+  try {
+    const origin = new URL(normalizeBaseUrl(baseUrl)).origin;
+    return `${origin}/*`;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Ensures runtime host permission exists for the configured provider origin.
+ *
+ * @param {string} baseUrl
+ * @returns {Promise<boolean>}
+ */
+function ensureProviderPermission(baseUrl) {
+  const pattern = getProviderPermissionPattern(baseUrl);
+  if (!pattern) {
+    console.error("Invalid provider URL for permissions:", baseUrl);
+    return Promise.resolve(false);
+  }
+
+  return new Promise((resolve) => {
+    chrome.permissions.contains({ origins: [pattern] }, (alreadyGranted) => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          "Failed checking provider permission:",
+          chrome.runtime.lastError,
+        );
+        resolve(false);
+        return;
+      }
+
+      if (alreadyGranted) {
+        resolve(true);
+        return;
+      }
+
+      chrome.permissions.request({ origins: [pattern] }, (granted) => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            "Failed requesting provider permission:",
+            chrome.runtime.lastError,
+          );
+          resolve(false);
+          return;
+        }
+        resolve(Boolean(granted));
+      });
+    });
+  });
+}
+
+/**
  * Reads message text from OpenAI-compatible chat completion responses.
  *
  * @param {any} responseData
@@ -110,6 +169,11 @@ function extractEnhancedPrompt(responseData) {
  */
 async function enhancePromptWithAi(assembledPrompt) {
   const endpoint = `${normalizeBaseUrl(aiSettings.baseUrl)}/chat/completions`;
+  const hasPermission = await ensureProviderPermission(aiSettings.baseUrl);
+  if (!hasPermission) {
+    console.error("Provider origin permission not granted.");
+    return { ok: false, promptText: "" };
+  }
 
   try {
     const response = await fetch(endpoint, {
