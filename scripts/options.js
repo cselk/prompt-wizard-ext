@@ -10,9 +10,11 @@
 /** Category keys that use the shared `{name, details}` item schema. @type {string[]} */
 const categories = ["persona", "operator", "format"];
 const AI_SETTINGS_LOCAL_KEY = "aiSettings";
+const DEFAULT_AI_BASE_URL = "https://api.openai.com/v1";
+const DEFAULT_AI_MODEL = "gpt-4o-mini";
 
 /**
- * Basic client-side OpenAI API key validation.
+ * Basic client-side API key validation.
  * Allows empty value for explicit key removal.
  *
  * @param {string} apiKey
@@ -20,7 +22,32 @@ const AI_SETTINGS_LOCAL_KEY = "aiSettings";
  */
 function isValidApiKey(apiKey) {
   if (!apiKey) return true;
-  return apiKey.startsWith("sk-");
+  return apiKey.length >= 10;
+}
+
+/**
+ * Validates provider base URL.
+ *
+ * @param {string} baseUrl
+ * @returns {boolean}
+ */
+function isValidBaseUrl(baseUrl) {
+  try {
+    const parsed = new URL(baseUrl);
+    return parsed.protocol === "https:" && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Normalizes base URL by trimming whitespace and trailing slashes.
+ *
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function normalizeBaseUrl(baseUrl) {
+  return baseUrl.trim().replace(/\/+$/, "");
 }
 
 /**
@@ -124,6 +151,8 @@ function importSettings(data) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const aiApiKeyInput = document.getElementById("ai-api-key");
+  const aiBaseUrlInput = document.getElementById("ai-base-url");
+  const aiModelInput = document.getElementById("ai-model");
   const aiKeyToggleBtn = document.getElementById("ai-key-toggle-btn");
   const saveAiSettingsBtn = document.getElementById("save-ai-settings-btn");
   let isApiKeyVisible = false;
@@ -147,7 +176,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const stored = data[AI_SETTINGS_LOCAL_KEY] || {};
     const apiKey = typeof stored.apiKey === "string" ? stored.apiKey : "";
+    const baseUrl =
+      typeof stored.baseUrl === "string" && stored.baseUrl.trim()
+        ? stored.baseUrl.trim()
+        : DEFAULT_AI_BASE_URL;
+    const model =
+      typeof stored.model === "string" && stored.model.trim()
+        ? stored.model.trim()
+        : DEFAULT_AI_MODEL;
     aiApiKeyInput.value = apiKey;
+    aiBaseUrlInput.value = baseUrl;
+    aiModelInput.value = model;
     setApiKeyVisibility(false);
   });
 
@@ -157,22 +196,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
   saveAiSettingsBtn.addEventListener("click", () => {
     const apiKey = aiApiKeyInput.value.trim();
+    const baseUrlInput = aiBaseUrlInput.value.trim();
+    const modelInput = aiModelInput.value.trim();
+    const baseUrl = normalizeBaseUrl(baseUrlInput || DEFAULT_AI_BASE_URL);
+    const model = modelInput || DEFAULT_AI_MODEL;
 
     if (!isValidApiKey(apiKey)) {
-      showToast("Invalid OpenAI key. It should start with sk-", "error");
+      showToast("Invalid API key.", "error");
       return;
     }
 
-    const aiSettings = apiKey ? { apiKey } : {};
+    if (!isValidBaseUrl(baseUrl)) {
+      showToast("Invalid provider base URL. Use a valid https:// URL.", "error");
+      return;
+    }
+
+    if (!model) {
+      showToast("Model is required.", "error");
+      return;
+    }
+
+    const aiSettings = {
+      baseUrl,
+      model,
+    };
+    if (apiKey) {
+      aiSettings.apiKey = apiKey;
+    }
+
     chrome.storage.local.set({ [AI_SETTINGS_LOCAL_KEY]: aiSettings }, () => {
       if (chrome.runtime.lastError) {
         showToast("Failed to save AI settings.", "error");
         return;
       }
       if (!apiKey) {
-        showToast("API key removed.");
+        showToast("AI settings saved (no API key configured).");
       } else {
-        showToast("OpenAI API key saved.");
+        showToast("AI settings saved.");
       }
       setApiKeyVisibility(false);
     });

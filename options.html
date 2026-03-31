@@ -39,7 +39,7 @@
                 <div class="ai-settings-fields">
                     <div class="ai-field">
                         <label class="ai-field-label" for="ai-api-key"
-                            >OpenAI API Key</label
+                            >OpenAI-Compatible API Key</label
                         >
                         <div class="ai-key-input-row">
                             <input
@@ -59,11 +59,35 @@
                             </button>
                         </div>
                     </div>
+                    <div class="ai-field">
+                        <label class="ai-field-label" for="ai-base-url"
+                            >Provider Base URL</label
+                        >
+                        <input
+                            type="text"
+                            id="ai-base-url"
+                            placeholder="https://api.openai.com/v1"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </div>
+                    <div class="ai-field">
+                        <label class="ai-field-label" for="ai-model"
+                            >Model</label
+                        >
+                        <input
+                            type="text"
+                            id="ai-model"
+                            placeholder="gpt-4o-mini"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </div>
                 </div>
                 <p class="ai-info-block">
                     Your API key is stored locally on your device and is never
                     sent to Cito servers. Prompts are sent directly from your
-                    browser to your AI provider.
+                    browser to your configured OpenAI-compatible provider.
                 </p>
                 <button id="save-ai-settings-btn" class="add-btn" type="button">
                     Save AI Settings

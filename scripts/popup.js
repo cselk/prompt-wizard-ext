@@ -40,6 +40,12 @@ const AI_SETTINGS_LOCAL_KEY = "aiSettings";
 /** Storage key used in chrome.storage.sync for popup enhancement toggle. @type {string} */
 const AI_ENHANCEMENT_SYNC_KEY = "aiEnhancementEnabled";
 
+/** Default OpenAI-compatible provider base URL used when none is configured. @type {string} */
+const DEFAULT_AI_BASE_URL = "https://api.openai.com/v1";
+
+/** Default model used for enhancement requests when none is configured. @type {string} */
+const DEFAULT_AI_MODEL = "gpt-4o-mini";
+
 /** Tooltip shown when AI features are unavailable without an API key. @type {string} */
 const AI_ENHANCEMENT_TOOLTIP =
   "Add your API key in Settings to enable AI features";
@@ -49,6 +55,143 @@ let hasAiApiKey = false;
 
 /** Persisted user preference for AI enhancement toggle. @type {boolean} */
 let isAiEnhancementEnabled = false;
+
+/** AI provider settings loaded from local storage. */
+let aiSettings = {
+  apiKey: "",
+  baseUrl: DEFAULT_AI_BASE_URL,
+  model: DEFAULT_AI_MODEL,
+};
+
+/** System guidance used for prompt-enhancement requests. @type {string} */
+const PROMPT_ENHANCEMENT_SYSTEM_PROMPT =
+  "You are a prompt optimization assistant. Preserve the original intent and overall structure of the prompt. Improve only phrasing, specificity, and instruction quality. Do not rewrite it into a different format, do not remove constraints, and do not change the requested outcome. Return only the improved prompt text.";
+
+/**
+ * Normalizes base URL by trimming whitespace and trailing slashes.
+ *
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function normalizeBaseUrl(baseUrl) {
+  return (baseUrl || "").trim().replace(/\/+$/, "");
+}
+
+/**
+ * Reads message text from OpenAI-compatible chat completion responses.
+ *
+ * @param {any} responseData
+ * @returns {string}
+ */
+function extractEnhancedPrompt(responseData) {
+  const message = responseData?.choices?.[0]?.message;
+  if (!message) return "";
+
+  if (typeof message.content === "string") {
+    return message.content.trim();
+  }
+
+  if (Array.isArray(message.content)) {
+    return message.content
+      .map((part) => (typeof part?.text === "string" ? part.text : ""))
+      .join("")
+      .trim();
+  }
+
+  return "";
+}
+
+/**
+ * Requests prompt enhancement from the configured OpenAI-compatible provider.
+ * Returns the original prompt on failure to preserve existing behavior.
+ *
+ * @param {string} assembledPrompt
+ * @returns {Promise<string>}
+ */
+async function enhancePromptWithAi(assembledPrompt) {
+  const endpoint = `${normalizeBaseUrl(aiSettings.baseUrl)}/chat/completions`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${aiSettings.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: aiSettings.model,
+        temperature: 0.2,
+        messages: [
+          {
+            role: "system",
+            content: PROMPT_ENHANCEMENT_SYSTEM_PROMPT,
+          },
+          {
+            role: "user",
+            content: assembledPrompt,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("AI enhancement request failed:", response.status, errorBody);
+      alert("AI enhancement failed. Injecting original prompt instead.");
+      return assembledPrompt;
+    }
+
+    const responseData = await response.json();
+    const improvedPrompt = extractEnhancedPrompt(responseData);
+    if (!improvedPrompt) {
+      console.error("AI enhancement response did not include prompt text.");
+      alert("AI enhancement returned an invalid response. Using original prompt.");
+      return assembledPrompt;
+    }
+
+    return improvedPrompt;
+  } catch (error) {
+    console.error("AI enhancement request error:", error);
+    alert("Could not reach AI provider. Injecting original prompt instead.");
+    return assembledPrompt;
+  }
+}
+
+/**
+ * Injects text into the active tab's detected chat input field.
+ *
+ * @param {string} textToInject
+ */
+function injectPromptIntoActiveTab(textToInject) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs[0]) return;
+
+    chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: (injectedText) => {
+        const selectors = [
+          "#prompt-textarea",
+          ".ProseMirror",
+          '[contenteditable="true"]',
+          "textarea",
+        ];
+        let inputField = null;
+        for (const s of selectors) {
+          inputField = document.querySelector(s);
+          if (inputField) break;
+        }
+
+        if (inputField) {
+          inputField.focus();
+          document.execCommand("insertText", false, injectedText);
+        } else {
+          alert("Could not find an AI input field on this page.");
+        }
+      },
+      args: [textToInject],
+    });
+  });
+}
 
 /**
  * Initializes AI enhancement toggle state from storage and wires persistence.
@@ -72,9 +215,25 @@ function initAiEnhancementToggle(initialEnabled) {
   });
 
   chrome.storage.local.get([AI_SETTINGS_LOCAL_KEY], (data) => {
-    const aiSettings = data[AI_SETTINGS_LOCAL_KEY] || {};
+    const storedAiSettings = data[AI_SETTINGS_LOCAL_KEY] || {};
     const apiKey =
-      typeof aiSettings.apiKey === "string" ? aiSettings.apiKey.trim() : "";
+      typeof storedAiSettings.apiKey === "string"
+        ? storedAiSettings.apiKey.trim()
+        : "";
+    const baseUrl =
+      typeof storedAiSettings.baseUrl === "string" &&
+      storedAiSettings.baseUrl.trim()
+        ? normalizeBaseUrl(storedAiSettings.baseUrl)
+        : DEFAULT_AI_BASE_URL;
+    const model =
+      typeof storedAiSettings.model === "string" && storedAiSettings.model.trim()
+        ? storedAiSettings.model.trim()
+        : DEFAULT_AI_MODEL;
+
+    // Keep provider settings cached for the enhancement request.
+    // API key remains optional for settings persistence, but required for toggle enablement.
+    aiSettings = { apiKey, baseUrl, model };
+
     hasAiApiKey = Boolean(apiKey);
 
     if (!hasAiApiKey) {
@@ -289,9 +448,11 @@ document.addEventListener("click", () => {
  *
  * The resulting string is injected into the active tab's chat input via
  * `chrome.scripting.executeScript`, using `execCommand("insertText")` so that
- * the host page's input event listeners fire correctly.
+ * the host page's input event listeners fire correctly. If AI enhancement is
+ * enabled, the assembled prompt is first sent to the configured provider and
+ * the improved version is injected.
  */
-document.getElementById("generateBtn").addEventListener("click", () => {
+document.getElementById("generateBtn").addEventListener("click", async () => {
   const persona = promptData.persona || { name: "Expert", details: "" };
   const operator = promptData.operator || { name: "Assist", details: "" };
   const format = promptData.format || { name: "Plain Text", details: "" };
@@ -330,36 +491,10 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     templateText = templateText.replace(new RegExp(`{{${key}}}`, "g"), val);
   });
 
+  let promptToInject = templateText;
   if (hasAiApiKey && isAiEnhancementEnabled) {
-    console.log("AI Enhancements enabled!");
+    promptToInject = await enhancePromptWithAi(templateText);
   }
 
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs[0]) return;
-
-    chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: (textToInject) => {
-        const selectors = [
-          "#prompt-textarea",
-          ".ProseMirror",
-          '[contenteditable="true"]',
-          "textarea",
-        ];
-        let inputField = null;
-        for (const s of selectors) {
-          inputField = document.querySelector(s);
-          if (inputField) break;
-        }
-
-        if (inputField) {
-          inputField.focus();
-          document.execCommand("insertText", false, textToInject);
-        } else {
-          alert("Could not find an AI input field on this page.");
-        }
-      },
-      args: [templateText],
-    });
-  });
+  injectPromptIntoActiveTab(promptToInject);
 });
